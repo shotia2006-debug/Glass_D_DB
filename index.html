@@ -888,7 +888,6 @@ const ART_STATIC_ITEMS = [
   { id: 'dialog_next_btn', cat: '대화 씬', list: '다음 버튼' },
   { id: 'dialog_window', cat: '대화 씬', list: '대화 창' },
 
-  { id: 'common_option_btn', cat: '공용', list: '옵션 버튼 (Normal/Hover/Focus/Disabled)' },
 
   // ── UI 프레임 (세분화, 메가루트 기준) ──
   { id: 'ui_frame_root', cat: 'UI 프레임', list: '전체 화면 외곽 프레임', note: '메가루트 전체 윈도우 테두리' },
@@ -1023,31 +1022,6 @@ const ART_STATIC_ITEMS = [
   { id: 'fx_float_dmg', cat: '전투 이펙트', list: '플로팅 숫자 — 피해' },
   { id: 'fx_float_heal', cat: '전투 이펙트', list: '플로팅 숫자 — 회복' },
 
-  // ── Trait / 상태이상 아이콘 ──
-  { id: 'icon_trait_split', cat: 'Trait 아이콘', list: 'ICON_SPLIT 분열' },
-  { id: 'icon_trait_first_strike', cat: 'Trait 아이콘', list: 'ICON_FIRST_STRIKE 선공' },
-  { id: 'icon_trait_thorns', cat: 'Trait 아이콘', list: 'ICON_THORNS 가시' },
-  { id: 'icon_trait_shield', cat: 'Trait 아이콘', list: 'ICON_SHIELD 장막' },
-  { id: 'icon_trait_corrosion', cat: 'Trait 아이콘', list: 'ICON_CORROSION 부식' },
-  { id: 'icon_trait_pierce', cat: 'Trait 아이콘', list: 'ICON_PIERCE 관통' },
-  { id: 'icon_trait_berserk', cat: 'Trait 아이콘', list: 'ICON_BERSERK 광폭화' },
-  { id: 'icon_trait_ap_drain', cat: 'Trait 아이콘', list: 'ICON_AP_DRAIN AP흡수' },
-  { id: 'icon_trait_curse', cat: 'Trait 아이콘', list: 'ICON_CURSE 저주' },
-  { id: 'icon_trait_armor_break', cat: 'Trait 아이콘', list: 'ICON_ARMOR_BREAK 방어무시' },
-  { id: 'icon_trait_lifesteal', cat: 'Trait 아이콘', list: 'ICON_LIFESTEAL 흡혈' },
-  { id: 'icon_trait_regen', cat: 'Trait 아이콘', list: 'ICON_REGEN 재생' },
-  { id: 'icon_trait_seal', cat: 'Trait 아이콘', list: 'ICON_SEAL 봉인' },
-  { id: 'icon_trait_swarm', cat: 'Trait 아이콘', list: 'ICON_SWARM 군집' },
-  { id: 'icon_trait_immune_phys', cat: 'Trait 아이콘', list: 'ICON_IMMUNE_PHYS 물리면역' },
-  { id: 'icon_trait_immune_magic', cat: 'Trait 아이콘', list: 'ICON_IMMUNE_MAGIC 마법면역' },
-  { id: 'icon_trait_poison', cat: 'Trait 아이콘', list: 'ICON_POISON 독' },
-  { id: 'icon_trait_summon', cat: 'Trait 아이콘', list: 'ICON_SUMMON 소환' },
-  { id: 'icon_trait_stun', cat: 'Trait 아이콘', list: 'ICON_STUN 마비' },
-  { id: 'icon_trait_fear', cat: 'Trait 아이콘', list: 'ICON_FEAR 공포' },
-  { id: 'icon_debuff_burn', cat: 'Trait 아이콘', list: '상태이상 — 화상' },
-  { id: 'icon_debuff_freeze', cat: 'Trait 아이콘', list: '상태이상 — 빙결' },
-  { id: 'icon_debuff_weaken', cat: 'Trait 아이콘', list: '상태이상 — 약화' },
-  { id: 'icon_debuff_expose', cat: 'Trait 아이콘', list: '상태이상 — 노출' },
 
   // ── 보상 / 상점 / 결과 ──
   { id: 'reward_panel_bg', cat: '보상·상점', list: '드롭 보상 패널 배경' },
@@ -1077,6 +1051,9 @@ const ART_STATIC_ITEMS = [
   { id: 'sys_font_damage', cat: '공통 시스템', list: '데미지 숫자 폰트/비트맵' },
   { id: 'sys_checkbox_on', cat: '공통 시스템', list: '체크박스 ON' },
   { id: 'sys_checkbox_off', cat: '공통 시스템', list: '체크박스 OFF' },
+
+  // ── 공용 (맨 뒤) ──
+  { id: 'common_option_btn', cat: '공용', list: '옵션 버튼 (Normal/Hover/Focus/Disabled)' },
 ];
 
 function loadArtChecks() {
@@ -1112,7 +1089,7 @@ function buildArtItems() {
     }
     items.push({
       id: 'mon_' + id,
-      cat: '몬스터 전체',
+      cat: '몬스터',
       list: id + (name ? ' — ' + name : ''),
       thumb: thumb
     });
@@ -1132,7 +1109,7 @@ function buildArtItems() {
       }
       items.push({
         id: 'item_' + id,
-        cat: '아이템 전체',
+        cat: '아이템',
         list: id + (name ? ' — ' + name : ''),
         thumb: thumb
       });
@@ -1146,6 +1123,11 @@ function artCatOrder(items) {
   items.forEach(it => {
     if (!order.includes(it.cat)) order.push(it.cat);
   });
+  const commonIdx = order.indexOf('공용');
+  if (commonIdx >= 0) {
+    order.splice(commonIdx, 1);
+    order.push('공용');
+  }
   return order;
 }
 
