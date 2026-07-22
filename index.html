@@ -160,15 +160,15 @@
     font-size: 14px; line-height: 1;
   }
   .wf-center {
-    position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
-    z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 18px;
+    position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%);
+    z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 28px;
     width: min(70%, 420px);
   }
   .wf-logo {
-    width: 220px; height: 88px; border: 2px solid #111; background: #fff;
+    width: 300px; height: 120px; border: 2px solid #111; background: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 28px; font-weight: 800; letter-spacing: 0.12em; color: #111;
-    box-shadow: 4px 4px 0 #ccc;
+    font-size: 36px; font-weight: 800; letter-spacing: 0.12em; color: #111;
+    box-shadow: 5px 5px 0 #ccc;
   }
   .wf-menu {
     display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px;
@@ -190,17 +190,8 @@
   }
 
 
-  /* Extra wireframe layouts (char / stage / dialog / ingame) */
-  .wf-screen.wf-ingame { max-width: 1100px; }
+  /* Extra wireframe layouts (char / stage / dialog / option / ingame) */
   .wf-panel[hidden] { display: none !important; }
-  .wf-topbar {
-    position: absolute; left: 0; right: 0; top: 0; z-index: 3;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px; font-size: 12px; color: #111;
-  }
-  .wf-crumb {
-    border: 1px solid #111; background: #fff; padding: 4px 8px;
-  }
   .wf-btn {
     border: 1px solid #111; background: #fff; color: #111;
     padding: 6px 12px; font-size: 12px; cursor: default;
@@ -210,25 +201,51 @@
     border: 2px solid #111; font-weight: 700; padding: 10px 18px; font-size: 14px;
   }
   .wf-btn.small { padding: 4px 8px; font-size: 11px; }
-  .wf-fill {
-    background:
-      repeating-linear-gradient(45deg, #fff 0 5px, #eee 5px 10px);
-  }
   .wf-label-box {
     border: 1px dashed #888; background: #fff; color: #888;
     font-size: 11px; padding: 3px 8px; text-align: center;
   }
-
-  /* Character select */
-  .wf-char { position: absolute; inset: 40px 12px 12px; z-index: 2; display: flex; gap: 14px; }
-  .wf-char-left {
-    flex: 0 0 45%; border: 2px solid #111; background: #fff;
-    display: flex; align-items: center; justify-content: center;
-    position: relative;
+  .wf-gear {
+    width: 28px; height: 28px; border: 1px solid #111; background: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px; line-height: 1;
   }
-  .wf-char-left .wf-label-box { position: absolute; }
-  .wf-char-right {
-    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;
+
+
+  /* Title layout tweaks */
+  .wf-center {
+    position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%);
+    z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 28px;
+    width: min(70%, 420px);
+  }
+  .wf-logo {
+    width: 300px; height: 120px; border: 2px solid #111; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; font-weight: 800; letter-spacing: 0.12em; color: #111;
+    box-shadow: 5px 5px 0 #ccc;
+  }
+  .wf-menu { margin-top: 8px; }
+
+  /* Character select — centered body, left info, bottom slots */
+  .wf-char-layout { position: absolute; inset: 0; z-index: 2; }
+  .wf-char-back {
+    position: absolute; left: 12px; top: 12px; z-index: 4;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  }
+  .wf-char-lobby {
+    border: 1px solid #111; background: #fff; padding: 6px 12px;
+    font-size: 16px; font-weight: 800; letter-spacing: 0.04em;
+  }
+  .wf-char-body {
+    position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
+    width: 34%; height: 58%;
+    border: 2px solid #111; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wf-char-info {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 26%; max-width: 220px; z-index: 3;
+    display: flex; flex-direction: column; gap: 8px;
   }
   .wf-char-name { font-size: 18px; font-weight: 800; border-bottom: 1px solid #111; padding-bottom: 4px; }
   .wf-char-tag {
@@ -236,67 +253,51 @@
     border: 1px solid #888; color: #888; font-size: 11px; padding: 2px 8px;
   }
   .wf-char-desc {
-    border: 1px solid #ccc; color: #888; font-size: 11px; line-height: 1.45;
-    padding: 8px; min-height: 54px; background: #fff;
+    border: 1px solid #ccc; color: #111; font-size: 11px; line-height: 1.45;
+    padding: 8px; min-height: 72px; background: #fff;
+  }
+  .wf-char-bottom {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+    z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 10px;
+    width: min(70%, 420px);
   }
   .wf-char-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 12px;
-    margin-top: 4px; flex: 1; align-content: start;
+    display: flex; gap: 10px; justify-content: center; width: 100%;
   }
   .wf-tile {
-    position: relative; aspect-ratio: 1; border: 1px solid #111; background: #fff;
+    position: relative; width: 56px; height: 56px; border: 1px solid #111; background: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 10px; color: #888;
+    font-size: 11px; color: #888; flex: 0 0 56px;
   }
   .wf-tile.selected { outline: 2px solid #111; outline-offset: 1px; background: #eee; color: #111; font-weight: 700; }
+  .wf-tile.locked { color: transparent; }
   .wf-tile.locked::after {
     content: "잠김"; position: absolute; inset: 0;
     background: #eee; border: 1px dashed #888;
     display: flex; align-items: center; justify-content: center;
-    color: #888; font-size: 10px;
+    color: #888; font-size: 11px;
   }
-  .wf-gear {
-    width: 28px; height: 28px; border: 1px solid #111; background: #fff;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 14px; line-height: 1;
-  }
-  .wf-tile .wf-badge {
-    position: absolute; top: 2px; right: 2px;
-    border: 1px solid #111; background: #fff; color: #111;
-    font-size: 9px; padding: 1px 4px; line-height: 1.2;
-  }
-  .wf-char-actions {
-    display: flex; justify-content: space-between; align-items: center; margin-top: auto;
-  }
-  .wf-util-bl {
-    position: absolute; left: 12px; bottom: 10px; z-index: 3;
-    display: flex; gap: 6px;
+  .wf-char-next { align-self: flex-end; margin-right: 0; }
+  .wf-char-opt {
+    position: absolute; right: 12px; top: 12px; z-index: 4;
   }
 
-  /* Stage select */
+  /* Stage */
   .wf-stage {
     position: absolute; inset: 0; z-index: 2;
     display: flex; flex-direction: column; align-items: center;
-    padding: 16px 18% 14px; gap: 8px;
+    padding: 16px 18% 14px; gap: 10px;
   }
   .wf-stage-title { font-size: 16px; font-weight: 800; margin-top: 6px; }
-  .wf-stage-meta { font-size: 11px; color: #888; }
   .wf-stage-preview {
-    flex: 1; width: 100%; max-height: 48%;
+    flex: 1; width: 100%; max-height: 58%;
     border: 2px solid #111; position: relative; margin: 4px 0;
-    background:
-      repeating-linear-gradient(45deg, #fff 0 6px, #eee 6px 12px);
+    background: repeating-linear-gradient(45deg, #fff 0 6px, #eee 6px 12px);
   }
   .wf-stage-preview .wf-label-box {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   }
-  .wf-stage-row {
-    display: flex; gap: 10px; width: 100%;
-  }
-  .wf-stage-row .wf-btn { flex: 1; text-align: center; }
-  .wf-stage-start {
-    width: 100%; margin-top: 4px; position: relative;
-  }
+  .wf-stage-start { width: 100%; margin-top: 4px; position: relative; }
   .wf-stage-start .wf-btn { width: 100%; text-align: center; }
   .wf-stage-stam {
     position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
@@ -315,98 +316,46 @@
     z-index: 3; border: 2px solid #111; background: #fff;
     padding: 10px 14px; display: flex; flex-direction: column;
   }
-  .wf-dialog-name { font-size: 13px; font-weight: 800; margin-bottom: 6px; }
-  .wf-dialog-text { flex: 1; font-size: 12px; color: #111; line-height: 1.5; }
+  .wf-dialog-tools {
+    position: absolute; right: 10px; top: 8px; z-index: 4;
+    display: flex; gap: 6px;
+  }
+  .wf-dialog-name { font-size: 13px; font-weight: 800; margin: 0 120px 6px 0; }
+  .wf-dialog-text { flex: 1; font-size: 12px; color: #111; line-height: 1.5; min-height: 40px; }
   .wf-dialog-next { align-self: flex-end; }
-  .wf-dialog-skip {
-    position: absolute; right: 12px; bottom: calc(10% + 28% + 6px); z-index: 3;
+  .wf-dialog-opt {
+    position: absolute; right: 12px; top: 12px; z-index: 4;
   }
 
-  /* Ingame split */
-  .wf-ingame-wrap {
-    position: absolute; inset: 0; z-index: 2; display: flex;
+  /* Options */
+  .wf-opt-panel {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    z-index: 3; width: min(72%, 520px); border: 2px solid #111; background: #fff;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 12px;
   }
-  .wf-ig-left {
-    flex: 0 0 45%; border-right: 2px solid #111; background: #fff;
-    display: flex; flex-direction: column; padding: 10px; gap: 8px;
+  .wf-opt-title { font-size: 16px; font-weight: 800; border-bottom: 1px solid #111; padding-bottom: 8px; }
+  .wf-opt-row {
+    display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center;
+    font-size: 12px;
   }
-  .wf-ig-right {
-    flex: 1; position: relative; min-width: 0;
-    background:
-      repeating-linear-gradient(45deg, #fff 0 6px, #eee 6px 12px);
+  .wf-opt-row label { color: #111; font-weight: 700; }
+  .wf-opt-ctrl {
+    border: 1px solid #111; background: #fff; padding: 6px 8px; font-size: 12px; color: #111;
+    display: flex; align-items: center; gap: 8px; min-height: 30px;
   }
-  .wf-ig-status {
-    display: flex; gap: 8px; align-items: flex-start;
+  .wf-opt-slider {
+    flex: 1; height: 8px; border: 1px solid #111; background:
+      linear-gradient(90deg, #ccc 0 60%, #fff 60% 100%);
   }
-  .wf-ig-portrait {
-    width: 56px; height: 56px; border: 1px solid #111; flex: 0 0 56px;
-    background: repeating-linear-gradient(90deg, #fff 0 3px, #ccc 3px 4px);
+  .wf-opt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+  /* Ingame placeholder */
+  .wf-ingame-hold {
+    position: absolute; inset: 0; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff;
   }
-  .wf-ig-bars { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 10px; }
-  .wf-ig-bar {
-    display: flex; align-items: center; gap: 6px;
-  }
-  .wf-ig-bar span { width: 28px; color: #888; }
-  .wf-ig-bar i {
-    flex: 1; height: 10px; border: 1px solid #111; background: #eee;
-    font-style: normal; display: block;
-  }
-  .wf-ig-bar i::after {
-    content: ""; display: block; height: 100%; width: var(--w, 70%);
-    background: #ccc;
-  }
-  .wf-ig-stats { font-size: 11px; color: #111; display: flex; gap: 12px; }
-  .wf-ig-inv-tabs { display: flex; gap: 6px; }
-  .wf-ig-inv-tabs .wf-btn { width: 28px; height: 28px; padding: 0; text-align: center; }
-  .wf-ig-inv {
-    display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;
-    flex: 1; align-content: start;
-  }
-  .wf-ig-slot {
-    aspect-ratio: 1; border: 1px solid #ccc; background: #fff;
-  }
-  .wf-ig-slot.filled {
-    border-color: #111;
-    background: repeating-linear-gradient(45deg, #fff 0 3px, #eee 3px 6px);
-  }
-  .wf-ig-equip {
-    display: flex; gap: 4px; flex-wrap: wrap;
-  }
-  .wf-ig-equip .wf-ig-slot { width: 32px; height: 32px; aspect-ratio: auto; }
-  .wf-ig-shop { display: flex; gap: 6px; margin-top: 2px; }
-  .wf-ig-floor {
-    position: absolute; left: 10px; top: 10px; z-index: 3;
-    border: 1px solid #111; background: #fff; padding: 4px 10px;
-    font-size: 12px; font-weight: 800;
-  }
-  .wf-ig-opt {
-    position: absolute; right: 10px; top: 10px; z-index: 3;
-  }
-  .wf-ig-speed {
-    position: absolute; right: 10px; bottom: 10px; z-index: 3;
-  }
-  .wf-ig-player {
-    position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%);
-    z-index: 3; width: 70px; height: 70px; border: 2px solid #111; background: #fff;
-    display: flex; align-items: center; justify-content: center; font-size: 11px;
-  }
-  .wf-ig-enemy {
-    position: absolute; top: 48%; z-index: 3;
-    width: 48px; height: 48px; border: 1px solid #111; background: #fff;
-    display: flex; align-items: center; justify-content: center; font-size: 10px; color: #888;
-  }
-  .wf-ig-enemy.l { left: 12%; }
-  .wf-ig-enemy.r { right: 12%; }
-  .wf-ig-float {
-    position: absolute; z-index: 4; border: 1px solid #111; background: #fff;
-    font-size: 10px; padding: 2px 6px;
-  }
-  .wf-ig-float.gold { left: 58%; top: 38%; }
-  .wf-ig-float.ehp { right: 10%; top: 40%; }
-  .wf-ig-bg-label {
-    position: absolute; left: 50%; top: 18%; transform: translateX(-50%);
-    z-index: 2;
-  }
+  .wf-ingame-hold .wf-label-box { font-size: 14px; padding: 14px 18px; color: #111; border-color: #111; }
 
 </style>
 </head>
@@ -465,13 +414,14 @@
       </footer>
     </main>
 
-    <main id="page-outgame" class="wrap" hidden>
+        <main id="page-outgame" class="wrap" hidden>
       <p class="outgame-caption" id="outgameCaption">싱크업용 타이틀 레이아웃 (흑백 와이어프레임) — 일러스트 없음</p>
       <div class="outgame-subtabs" id="outgameSubTabs" role="tablist">
         <button type="button" class="subtab active" data-outgame-tab="title">타이틀</button>
         <button type="button" class="subtab" data-outgame-tab="char">캐릭터 선택</button>
         <button type="button" class="subtab" data-outgame-tab="stage">스테이지 선택</button>
         <button type="button" class="subtab" data-outgame-tab="dialog">대화 씬</button>
+        <button type="button" class="subtab" data-outgame-tab="option">옵션</button>
       </div>
       <div class="wf-panel" id="outgameTitlePanel">
         <div class="wf-screen" aria-label="타이틀 화면 와이어프레임">
@@ -480,7 +430,7 @@
           </div>
           <div class="wf-profile">
             <span class="wf-profile-icon" aria-hidden="true"></span>
-            <span>프로필 / 계정 변경</span>
+            <span>프로필</span>
           </div>
           <div class="wf-meta">
             <span class="wf-ver">v0.1</span>
@@ -489,9 +439,9 @@
           <div class="wf-center">
             <div class="wf-logo">LOGO</div>
             <div class="wf-menu">
+              <button type="button">이어하기</button>
               <button type="button">시작하기</button>
-              <button type="button">갤러리(백과사전)</button>
-              <button type="button">옵션</button>
+              <button type="button">백과사전</button>
               <button type="button">종료하기</button>
             </div>
           </div>
@@ -500,41 +450,33 @@
       </div>
       <div class="wf-panel" id="outgameCharPanel" hidden>
         <div class="wf-screen" aria-label="캐릭터 선택 와이어프레임">
-          <div class="wf-topbar">
-            <span class="wf-crumb">로비</span>
-            <span class="wf-gear" title="옵션" aria-label="옵션">⚙</span>
+          <div class="wf-bg" aria-hidden="true">
+            <span class="wf-bg-label">배경 이미지</span>
           </div>
-          <div class="wf-char">
-            <div class="wf-char-left">
-              <span class="wf-label-box">캐릭터 전신 이미지</span>
+          <div class="wf-char-layout">
+            <div class="wf-char-back">
+              <button type="button" class="wf-btn small">뒤로가기</button>
+              <div class="wf-char-lobby">로비</div>
             </div>
-            <div class="wf-char-right">
+            <span class="wf-gear wf-char-opt" title="옵션" aria-label="옵션">⚙</span>
+            <div class="wf-char-info">
               <div class="wf-char-name">캐릭터 이름</div>
               <div class="wf-char-tag">직업 / 태그</div>
-              <div class="wf-char-desc">
-                캐릭터 설명 텍스트 자리입니다.<br/>
-                더미 문장으로 레이아웃만 확인합니다.<br/>
-                일러스트·컬러 아트는 사용하지 않습니다.
-              </div>
-              <div class="wf-char-grid" aria-label="캐릭터 선택 그리드">
-                <div class="wf-tile selected">선택됨</div>
-                <div class="wf-tile">01</div>
-                <div class="wf-tile locked">02</div>
-                <div class="wf-tile">03<span class="wf-badge">DLC</span></div>
-                <div class="wf-tile">04</div>
-                <div class="wf-tile locked">05</div>
-                <div class="wf-tile">06<span class="wf-badge">DLC</span></div>
-                <div class="wf-tile">07</div>
-              </div>
-              <div class="wf-char-actions">
-                <span></span>
-                <button type="button" class="wf-btn primary">NEXT / 다음</button>
-              </div>
+              <div class="wf-char-desc">캐릭터 설명</div>
             </div>
-          </div>
-          <div class="wf-util-bl">
-            <button type="button" class="wf-btn small">뒤로가기</button>
-            <button type="button" class="wf-btn small">메뉴</button>
+            <div class="wf-char-body">
+              <span class="wf-label-box">캐릭터 전신 이미지</span>
+            </div>
+            <div class="wf-char-bottom">
+              <div class="wf-char-grid" aria-label="캐릭터 선택 슬롯">
+                <div class="wf-tile selected">선택됨</div>
+                <div class="wf-tile">1</div>
+                <div class="wf-tile">2</div>
+                <div class="wf-tile">3</div>
+                <div class="wf-tile locked">잠김</div>
+              </div>
+              <button type="button" class="wf-btn primary wf-char-next">다음</button>
+            </div>
           </div>
         </div>
       </div>
@@ -545,13 +487,8 @@
           </div>
           <div class="wf-stage">
             <div class="wf-stage-title">2. 스테이지명</div>
-            <div class="wf-stage-meta">최장 생존시간: 0초</div>
             <div class="wf-stage-preview">
               <span class="wf-label-box">스테이지 미리보기 / 배경</span>
-            </div>
-            <div class="wf-stage-row">
-              <button type="button" class="wf-btn">챕터 보물상자</button>
-              <button type="button" class="wf-btn">순찰</button>
             </div>
             <div class="wf-stage-start">
               <button type="button" class="wf-btn primary">게임 시작</button>
@@ -565,84 +502,76 @@
           <div class="wf-bg" aria-hidden="true">
             <span class="wf-bg-label">배경 이미지</span>
           </div>
-          <div class="wf-topbar">
-            <span class="wf-crumb">로비 / 스토리</span>
-            <span class="wf-gear" title="옵션" aria-label="옵션">⚙</span>
-          </div>
+          <span class="wf-gear wf-dialog-opt" title="옵션" aria-label="옵션">⚙</span>
           <div class="wf-dialog-sprite">
             <span class="wf-label-box">캐릭터 스프라이트</span>
           </div>
-          <button type="button" class="wf-btn small wf-dialog-skip">스킵</button>
           <div class="wf-dialog-box">
+            <div class="wf-dialog-tools">
+              <button type="button" class="wf-btn small">빨리감기</button>
+              <button type="button" class="wf-btn small">스킵</button>
+            </div>
             <div class="wf-dialog-name">캐릭터 이름</div>
-            <div class="wf-dialog-text">대화 텍스트… 더미 문장으로 레이아웃만 확인합니다.</div>
+            <div class="wf-dialog-text"></div>
             <button type="button" class="wf-btn wf-dialog-next">NEXT</button>
           </div>
         </div>
       </div>
-    </main>
-
-    <main id="page-ingame" class="wrap" hidden>
-      <p class="outgame-caption">싱크업용 인게임 레이아웃 (흑백 와이어프레임) — 일러스트 없음</p>
-      <div class="wf-panel" style="max-width:1100px">
-        <div class="wf-screen wf-ingame" aria-label="인게임 레이아웃 와이어프레임">
-          <div class="wf-ingame-wrap">
-            <div class="wf-ig-left">
-              <div class="wf-ig-status">
-                <div class="wf-ig-portrait" aria-label="초상화"></div>
-                <div class="wf-ig-bars">
-                  <div class="wf-ig-bar"><span>HP</span><i style="--w:78%"></i></div>
-                  <div class="wf-ig-bar"><span>MP</span><i style="--w:55%"></i></div>
-                  <div class="wf-ig-bar"><span>자원</span><i style="--w:40%"></i></div>
-                  <div class="wf-ig-stats"><span>ATK 12</span><span>DEF 8</span></div>
-                </div>
-              </div>
-              <div class="wf-ig-inv-tabs">
-                <button type="button" class="wf-btn" title="탭1">□</button>
-                <button type="button" class="wf-btn" title="탭2">◇</button>
-                <button type="button" class="wf-btn" title="탭3">○</button>
-              </div>
-              <div class="wf-ig-inv" aria-label="인벤토리 6x4">
-                <div class="wf-ig-slot filled"></div><div class="wf-ig-slot filled"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot filled"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot filled"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot"></div>
-                <div class="wf-ig-slot filled"></div><div class="wf-ig-slot"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot filled"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot"></div>
-              </div>
-              <div class="wf-ig-equip" aria-label="장비 슬롯">
-                <div class="wf-ig-slot filled"></div><div class="wf-ig-slot"></div>
-                <div class="wf-ig-slot filled"></div><div class="wf-ig-slot"></div>
-                <div class="wf-ig-slot"></div><div class="wf-ig-slot filled"></div>
-              </div>
-              <div class="wf-ig-shop">
-                <button type="button" class="wf-btn small">상점</button>
-                <button type="button" class="wf-btn small">리롤</button>
-              </div>
+      <div class="wf-panel" id="outgameOptionPanel" hidden>
+        <div class="wf-screen" aria-label="옵션 와이어프레임">
+          <div class="wf-bg" aria-hidden="true">
+            <span class="wf-bg-label">배경 이미지</span>
+          </div>
+          <div class="wf-opt-panel">
+            <div class="wf-opt-title">옵션</div>
+            <div class="wf-opt-row">
+              <label>해상도</label>
+              <div class="wf-opt-ctrl">1920 × 1080 ▾</div>
             </div>
-            <div class="wf-ig-right">
-              <span class="wf-label-box wf-ig-bg-label">인게임 배경</span>
-              <div class="wf-ig-floor">FLOOR N</div>
-              <span class="wf-gear wf-ig-opt" title="옵션" aria-label="옵션">⚙</span>
-              <div class="wf-ig-enemy l">적</div>
-              <div class="wf-ig-player">플레이어</div>
-              <div class="wf-ig-enemy r">적</div>
-              <span class="wf-ig-float gold">+골드</span>
-              <span class="wf-ig-float ehp">2/5</span>
-              <button type="button" class="wf-btn small wf-ig-speed">&gt;&gt;</button>
+            <div class="wf-opt-row">
+              <label>화면 모드</label>
+              <div class="wf-opt-ctrl">전체화면 ▾</div>
+            </div>
+            <div class="wf-opt-row">
+              <label>전체 음량</label>
+              <div class="wf-opt-ctrl"><span class="wf-opt-slider" aria-hidden="true"></span> 60</div>
+            </div>
+            <div class="wf-opt-row">
+              <label>BGM</label>
+              <div class="wf-opt-ctrl"><span class="wf-opt-slider" aria-hidden="true"></span> 60</div>
+            </div>
+            <div class="wf-opt-row">
+              <label>SE</label>
+              <div class="wf-opt-ctrl"><span class="wf-opt-slider" aria-hidden="true"></span> 60</div>
+            </div>
+            <div class="wf-opt-row">
+              <label>언어</label>
+              <div class="wf-opt-ctrl">한국어 ▾</div>
+            </div>
+            <div class="wf-opt-row">
+              <label>진동</label>
+              <div class="wf-opt-ctrl">켜기 ▾</div>
+            </div>
+            <div class="wf-opt-actions">
+              <button type="button" class="wf-btn">기본값</button>
+              <button type="button" class="wf-btn primary">적용</button>
+              <button type="button" class="wf-btn">닫기</button>
             </div>
           </div>
         </div>
       </div>
     </main>
-
-    <main id="page-placeholder" class="wrap" hidden>
+    <main id="page-ingame" class="wrap" hidden>
+      <p class="outgame-caption">인게임 레이아웃 — 다듬는 동안 임시로 숨김. 이후 다시 안내 예정.</p>
+      <div class="wf-panel" style="max-width:1100px">
+        <div class="wf-screen wf-ingame" aria-label="인게임 레이아웃 보류">
+          <div class="wf-ingame-hold">
+            <span class="wf-label-box">인게임 레이아웃 준비 중 (현재 숨김)</span>
+          </div>
+        </div>
+      </div>
+    </main>
+<main id="page-placeholder" class="wrap" hidden>
       <div class="placeholder" id="placeholderMsg">준비 중</div>
     </main>
 
@@ -1148,8 +1077,8 @@ function renderArtPage() {
 }
 
 const PAGE_META = {
-  outgame: { title: '아웃게임 (레이아웃)', sub: '타이틀 · 캐릭터 · 스테이지 · 대화 — 흑백 와이어프레임' },
-  ingame: { title: '인게임 (레이아웃)', sub: '인게임 레이아웃 — 흑백 와이어프레임' },
+  outgame: { title: '아웃게임 (레이아웃)', sub: '타이틀 · 캐릭터 · 스테이지 · 대화 · 옵션 — 흑백 와이어프레임' },
+  ingame: { title: '인게임 (레이아웃)', sub: '레이아웃 준비 중 — 안내 후 다시 다듬을 예정' },
   art: { title: '아트 리소스', sub: '구분 · 리스트 · 체크 — 아트 요청/납품 추적' },
   data: { title: 'DB', sub: '몬스터 · 아이템(기본/재료/세트/조합) — HTML 파일만 공유해도 열람 가능 · 장비 크기 당분간 1×1' }
 };
@@ -1158,14 +1087,16 @@ const OUTGAME_CAPTIONS = {
   title: '싱크업용 타이틀 레이아웃 (흑백 와이어프레임) — 일러스트 없음',
   char: '싱크업용 캐릭터 선택 레이아웃 (흑백 와이어프레임) — 일러스트 없음',
   stage: '싱크업용 스테이지 선택 레이아웃 (흑백 와이어프레임) — 일러스트 없음',
-  dialog: '싱크업용 대화 씬 레이아웃 (흑백 와이어프레임) — 일러스트 없음'
+  dialog: '싱크업용 대화 씬 레이아웃 (흑백 와이어프레임) — 일러스트 없음',
+  option: '싱크업용 옵션 레이아웃 (흑백 와이어프레임) — 기본 설정 항목'
 };
 
 const OUTGAME_PANELS = {
   title: 'outgameTitlePanel',
   char: 'outgameCharPanel',
   stage: 'outgameStagePanel',
-  dialog: 'outgameDialogPanel'
+  dialog: 'outgameDialogPanel',
+  option: 'outgameOptionPanel'
 };
 
 function showOutgameTab(tab) {
