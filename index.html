@@ -477,6 +477,7 @@
         <div class="art-prog-bar" aria-hidden="true"><div class="art-prog-fill" id="artProgressFill"></div></div>
         <button type="button" class="btn secondary" id="artResetBtn">체크 초기화</button>
       </div>
+      <div class="tabs" id="artTabs"></div>
       <div id="artRoot"></div>
       <footer>
         체크 상태는 이 브라우저의 localStorage(<code>glass_d_art_checks</code>)에 저장됩니다. 새로고침 후에도 유지됩니다.<br/>
@@ -485,7 +486,6 @@
     </main>
 
     <main id="page-layout" class="wrap" hidden>
-      <p class="outgame-caption" id="layoutCaption">싱크업용 타이틀 레이아웃 (흑백 와이어프레임) — 일러스트 없음</p>
       <div class="outgame-subtabs" id="layoutSubTabs" role="tablist">
         <button type="button" class="subtab active" data-layout-tab="title">타이틀</button>
         <button type="button" class="subtab" data-layout-tab="char">캐릭터 선택</button>
@@ -1097,6 +1097,7 @@ function saveArtChecks(map) {
 }
 
 let artChecks = loadArtChecks();
+let artTab = '';
 
 function buildArtItems() {
   const items = ART_STATIC_ITEMS.map(x => ({ ...x, thumb: null }));
@@ -1140,6 +1141,14 @@ function buildArtItems() {
   return items;
 }
 
+function artCatOrder(items) {
+  const order = [];
+  items.forEach(it => {
+    if (!order.includes(it.cat)) order.push(it.cat);
+  });
+  return order;
+}
+
 function updateArtProgress(items) {
   const total = items.length;
   const checked = items.reduce((n, it) => n + (artChecks[it.id] ? 1 : 0), 0);
@@ -1149,39 +1158,44 @@ function updateArtProgress(items) {
   if (fill) fill.style.width = (total ? Math.round(checked * 100 / total) : 0) + '%';
 }
 
-function renderArtPage() {
+function renderArtTabs(order) {
+  const el = document.getElementById('artTabs');
+  if (!el) return;
+  el.innerHTML = '';
+  order.forEach(cat => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tab' + (artTab === cat ? ' active' : '');
+    b.textContent = cat;
+    b.onclick = () => {
+      if (artTab === cat) return;
+      artTab = cat;
+      renderArtPage();
+    };
+    el.appendChild(b);
+  });
+}
+
+function renderArtTable(items) {
   const root = document.getElementById('artRoot');
   if (!root) return;
-  const items = buildArtItems();
-  const sections = [];
-  const order = [];
-  items.forEach(it => {
-    if (!order.includes(it.cat)) order.push(it.cat);
-  });
-  order.forEach(cat => {
-    const rows = items.filter(it => it.cat === cat);
-    const body = rows.map(it => {
-      const on = !!artChecks[it.id];
-      const thumb = it.thumb
-        ? '<img class="art-thumb" src="' + it.thumb + '" alt="" />'
-        : '';
-      const note = it.note ? '<span class="art-note">' + String(it.note).replace(/</g,'&lt;') + '</span>' : '';
-      return '<tr class="' + (on ? 'checked' : '') + '" data-art-id="' + it.id.replace(/"/g,'&quot;') + '">'
-        + '<td class="art-cat">' + cat.replace(/</g,'&lt;') + '</td>'
-        + '<td><div class="art-list">' + thumb
-        + '<div class="art-list-text">' + String(it.list).replace(/</g,'&lt;') + note + '</div></div></td>'
-        + '<td class="art-check-cell"><button type="button" class="art-check" aria-pressed="' + (on ? 'true' : 'false') + '" title="체크">'
-        + (on ? '✓' : '') + '</button></td></tr>';
-    }).join('');
-    sections.push(
-      '<section class="art-section"><h2 class="art-section-h">' + cat.replace(/</g,'&lt;')
-      + ' <span class="badge">' + rows.length + '</span></h2>'
-      + '<div class="art-table-wrap"><table class="art-table"><thead><tr>'
-      + '<th style="width:180px">구분</th><th>리스트</th><th style="width:72px">체크</th>'
-      + '</tr></thead><tbody>' + body + '</tbody></table></div></section>'
-    );
-  });
-  root.innerHTML = sections.join('');
+  const rows = items.filter(it => it.cat === artTab);
+  const body = rows.map(it => {
+    const on = !!artChecks[it.id];
+    const thumb = it.thumb
+      ? '<img class="art-thumb" src="' + it.thumb + '" alt="" />'
+      : '';
+    const note = it.note ? '<span class="art-note">' + String(it.note).replace(/</g,'&lt;') + '</span>' : '';
+    return '<tr class="' + (on ? 'checked' : '') + '" data-art-id="' + it.id.replace(/"/g,'&quot;') + '">'
+      + '<td><div class="art-list">' + thumb
+      + '<div class="art-list-text">' + String(it.list).replace(/</g,'&lt;') + note + '</div></div></td>'
+      + '<td class="art-check-cell"><button type="button" class="art-check" aria-pressed="' + (on ? 'true' : 'false') + '" title="체크">'
+      + (on ? '✓' : '') + '</button></td></tr>';
+  }).join('');
+  root.innerHTML =
+    '<div class="art-table-wrap"><table class="art-table"><thead><tr>'
+    + '<th>리스트 <span class="badge">' + rows.length + '</span></th><th style="width:72px">체크</th>'
+    + '</tr></thead><tbody>' + body + '</tbody></table></div>';
   root.querySelectorAll('tr[data-art-id]').forEach(tr => {
     const id = tr.getAttribute('data-art-id');
     const btn = tr.querySelector('.art-check');
@@ -1197,6 +1211,24 @@ function renderArtPage() {
       updateArtProgress(items);
     });
   });
+}
+
+function renderArtPage() {
+  const root = document.getElementById('artRoot');
+  if (!root) return;
+  const items = buildArtItems();
+  const order = artCatOrder(items);
+  if (!order.length) {
+    artTab = '';
+    const tabs = document.getElementById('artTabs');
+    if (tabs) tabs.innerHTML = '';
+    root.innerHTML = '';
+    updateArtProgress(items);
+    return;
+  }
+  if (!artTab || !order.includes(artTab)) artTab = order[0];
+  renderArtTabs(order);
+  renderArtTable(items);
   updateArtProgress(items);
   const resetBtn = document.getElementById('artResetBtn');
   if (resetBtn && !resetBtn.dataset.bound) {
@@ -1212,17 +1244,8 @@ function renderArtPage() {
 
 const PAGE_META = {
   layout: { title: '레이아웃', sub: '타이틀 · 캐릭터 · 스테이지 · 대화 · 옵션 · 인게임 — 흑백 와이어프레임' },
-  art: { title: '아트 리소스', sub: '구분 · 리스트 · 체크 — 아트 요청/납품 추적' },
+  art: { title: '아트 리소스', sub: '' },
   data: { title: 'DB', sub: '몬스터 · 아이템(기본/재료/세트/조합) — HTML 파일만 공유해도 열람 가능 · 장비 크기 당분간 1×1' }
-};
-
-const LAYOUT_CAPTIONS = {
-  title: '싱크업용 타이틀 레이아웃 (흑백 와이어프레임) — 일러스트 없음',
-  char: '싱크업용 캐릭터 선택 레이아웃 (흑백 와이어프레임) — 일러스트 없음',
-  stage: '싱크업용 스테이지 선택 레이아웃 (흑백 와이어프레임) — 일러스트 없음',
-  dialog: '싱크업용 대화 씬 레이아웃 (흑백 와이어프레임) — 일러스트 없음',
-  option: '싱크업용 옵션 레이아웃 (흑백 와이어프레임) — 기본 설정 항목',
-  ingame: '싱크업용 인게임 레이아웃 (흑백 와이어프레임) — 일러스트 없음'
 };
 
 const LAYOUT_PANELS = {
@@ -1243,8 +1266,6 @@ function showLayoutTab(tab) {
   document.querySelectorAll('#layoutSubTabs .subtab').forEach(b => {
     b.classList.toggle('active', b.dataset.layoutTab === key);
   });
-  const cap = document.getElementById('layoutCaption');
-  if (cap) cap.textContent = LAYOUT_CAPTIONS[key] || LAYOUT_CAPTIONS.title;
 }
 
 function showPage(page) {
