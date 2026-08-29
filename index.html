@@ -437,23 +437,24 @@
   .stage-head .stage-name-input { min-width:160px; font-weight:700; }
   .stage-head .spacer { flex:1; }
   .stage-save-status { color:var(--accent2); font-size:12px; min-width:110px; text-align:right; }
-  .wave-table { border-collapse:collapse; width:100%; min-width:960px; font-size:12px; }
+  .wave-table { border-collapse:collapse; width:100%; min-width:960px; font-size:13px; table-layout:auto; }
   .wave-table th {
-    position:sticky; top:0; background:#243247; text-align:left; padding:10px 8px;
+    position:sticky; top:0; background:#243247; text-align:left; padding:12px 10px;
     border-bottom:1px solid var(--border); white-space:nowrap;
   }
-  .wave-table td { padding:6px; border-bottom:1px solid #243247; vertical-align:top; }
+  .wave-table td { padding:14px 10px; border-bottom:1px solid #243247; vertical-align:top; }
   .wave-table td:first-child { width:78px; white-space:nowrap; color:var(--muted); }
   .wave-table tr:hover td { background:#24324766; }
   .wave-table td input, .wave-table td textarea {
     width:100%; background:transparent; border:1px solid transparent; color:var(--text);
-    font-size:12px; padding:6px; border-radius:6px; font-family:inherit; resize:vertical;
+    font-size:13px; padding:8px; border-radius:6px; font-family:inherit;
+    resize:none; overflow:hidden; line-height:1.6;
   }
-  .wave-table td textarea { min-height:56px; line-height:1.4; }
+  .wave-table td textarea { min-height:32px; }
   .wave-table td input:hover, .wave-table td textarea:hover { border-color:#334155; }
   .wave-table td input:focus, .wave-table td textarea:focus { border-color:var(--accent); background:#0b1220; outline:none; }
-  .wave-table td.col-monsters { min-width:220px; }
-  .wave-table td.col-theme { min-width:150px; }
+  .wave-table td.col-monsters { min-width:240px; }
+  .wave-table td.col-theme { min-width:160px; }
 </style>
 </head>
 <body>
@@ -1385,6 +1386,12 @@ function stageIsEmpty(stage) {
   return stage.waves.every(w => !w.theme && !w.monsters && !w.turns && !w.gold && !w.drop && !w.note);
 }
 
+// textarea가 내용에 맞춰 자동으로 늘어나도록 하여 셀 내부 스크롤이 생기지 않게 함.
+function autoGrowTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight + 2) + 'px';
+}
+
 function renderStageTabs() {
   const wrap = document.getElementById('stageTabs');
   if (!wrap) return;
@@ -1454,14 +1461,17 @@ function renderWaveTable() {
       if (col.className) td.className = col.className;
       const input = col.multiline ? document.createElement('textarea') : document.createElement('input');
       if (!col.multiline) input.type = 'text';
+      if (col.multiline) input.rows = 1;
       input.value = wave[col.key] || '';
       input.placeholder = col.placeholder || '';
       input.addEventListener('input', () => {
         wave[col.key] = input.value;
         saveStageDesignDebounced();
+        if (col.multiline) autoGrowTextarea(input);
       });
       td.appendChild(input);
       tr.appendChild(td);
+      if (col.multiline) requestAnimationFrame(() => autoGrowTextarea(input));
     });
 
     tbody.appendChild(tr);
