@@ -429,40 +429,31 @@
   }
   .wf-opt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
-  /* Stage wave design tool */
+  /* Stage wave design tool (table form) */
   .stage-head {
     display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:14px 0; padding:12px 14px;
     border:1px solid var(--border); border-radius:12px; background:var(--panel);
   }
   .stage-head .stage-name-input { min-width:160px; font-weight:700; }
-  .stage-head label { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer; }
   .stage-head .spacer { flex:1; }
   .stage-save-status { color:var(--accent2); font-size:12px; min-width:110px; text-align:right; }
-  .wave-tabs .tab.wave-filled { border-color:var(--accent2); }
-  .wave-tabs .tab.wave-filled.active { border-color:var(--accent); }
-  .wave-form { border:1px solid var(--border); border-radius:12px; background:var(--panel); padding:16px; margin-bottom:20px; }
-  .wave-grid { display:grid; grid-template-columns: repeat(4, minmax(140px,1fr)); gap:12px; margin-bottom:14px; }
-  .wave-grid .field-full { grid-column: 1 / -1; }
-  .wave-grid label, .mon-add label { display:block; font-size:11px; color:var(--muted); margin-bottom:4px; }
-  .wave-grid input, .wave-grid select { width:100%; }
-  .wave-shop-row { display:flex; align-items:center; gap:8px; }
-  .mon-list { display:flex; flex-direction:column; gap:8px; margin:10px 0; }
-  .mon-row { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:#0b1220; }
-  .mon-row .mon-order { width:22px; color:var(--muted); font-size:12px; text-align:center; flex:0 0 22px; }
-  .mon-row select { flex:1 1 260px; min-width:180px; }
-  .mon-row input.mon-qty { width:64px; flex:0 0 64px; }
-  .mon-row input.mon-note { flex:1 1 160px; min-width:120px; }
-  .mon-row .mon-stat { color:var(--muted); font-size:11px; white-space:nowrap; flex:0 0 auto; }
-  .mon-row .mon-actions { display:flex; gap:4px; flex:0 0 auto; }
-  .icon-btn { border:1px solid var(--border); background:#1e293b; color:var(--text); border-radius:6px; width:26px; height:26px; cursor:pointer; font-size:12px; line-height:1; }
-  .icon-btn:hover { border-color:var(--accent); }
-  .icon-btn:disabled { opacity:0.35; cursor:not-allowed; }
-  .icon-btn.danger { background:#3f1d1d; border-color:#7f1d1d; color:#fca5a5; }
-  .icon-btn.danger:hover { border-color:#ef4444; }
-  .mon-add { display:flex; align-items:flex-end; gap:8px; margin-top:6px; flex-wrap:wrap; }
-  .mon-add select { flex:1 1 260px; min-width:180px; }
-  .mon-empty { color:var(--muted); font-size:12px; padding:10px 0; }
-  .stage-boss-note { color:var(--muted); font-size:12px; margin-top:6px; }
+  .wave-table { border-collapse:collapse; width:100%; min-width:960px; font-size:12px; }
+  .wave-table th {
+    position:sticky; top:0; background:#243247; text-align:left; padding:10px 8px;
+    border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  .wave-table td { padding:6px; border-bottom:1px solid #243247; vertical-align:top; }
+  .wave-table td:first-child { width:78px; white-space:nowrap; color:var(--muted); }
+  .wave-table tr:hover td { background:#24324766; }
+  .wave-table td input, .wave-table td textarea {
+    width:100%; background:transparent; border:1px solid transparent; color:var(--text);
+    font-size:12px; padding:6px; border-radius:6px; font-family:inherit; resize:vertical;
+  }
+  .wave-table td textarea { min-height:56px; line-height:1.4; }
+  .wave-table td input:hover, .wave-table td textarea:hover { border-color:#334155; }
+  .wave-table td input:focus, .wave-table td textarea:focus { border-color:var(--accent); background:#0b1220; outline:none; }
+  .wave-table td.col-monsters { min-width:220px; }
+  .wave-table td.col-theme { min-width:150px; }
 </style>
 </head>
 <body>
@@ -764,22 +755,20 @@
 
       <div class="stage-head">
         <input type="text" id="stageNameInput" class="stage-name-input" placeholder="스테이지 이름" />
-        <label><input type="checkbox" id="stageDlcCheck" /> DLC 스테이지</label>
         <div class="spacer"></div>
-        <button type="button" class="btn secondary" id="stageTemplateBtn">BALANCE_WaveSheet 템플릿 불러오기</button>
+        <select id="stageCopySource"></select>
+        <button type="button" class="btn secondary" id="stageCopyBtn">선택한 스테이지 내용 복사</button>
         <button type="button" class="btn secondary" id="stageClearBtn">이 스테이지 초기화</button>
         <span class="stage-save-status" id="stageSaveStatus"></span>
       </div>
 
-      <div class="tabs wave-tabs" id="waveTabs"></div>
-
-      <div class="wave-form" id="waveForm"></div>
+      <div class="table-wrap" id="waveTableWrap" style="max-height:none"></div>
 
       <div class="toolbar">
         <button type="button" class="btn secondary" id="stageExportBtn">전체 스테이지 내보내기(JSON)</button>
         <button type="button" class="btn secondary" id="stageImportBtn">가져오기(JSON)</button>
         <input type="file" id="stageImportFile" accept="application/json" style="display:none" />
-        <span class="count">스테이지/웨이브 데이터는 이 브라우저의 localStorage에만 저장됩니다. 작업 후 내보내기로 백업을 권장합니다.</span>
+        <span class="count">스테이지 01은 기존 Wave 배치표(실제 설계) 기준으로 채워져 있습니다 · 데이터는 이 브라우저의 localStorage에만 저장되니 내보내기로 백업을 권장합니다.</span>
       </div>
     </main>
 
@@ -797,7 +786,10 @@ const DATA = {"meta": {"title": "Glass_D 데이터 테이블", "source_monster":
 const state = { main: '몬스터', sub: '', q: '', f1: '전체', f2: '전체' };
 
 function sheetKeys(main) {
-  return Object.keys(DATA[main] || {});
+  const keys = Object.keys(DATA[main] || {});
+  // Wave 배치표는 DB 탭이 아니라 '스테이지' 탭에서 스테이지별로 관리한다.
+  if (main === '몬스터') return keys.filter(k => k !== 'Wave 배치표');
+  return keys;
 }
 
 function currentSheet() {
@@ -1302,44 +1294,62 @@ function renderArtPage() {
   }
 }
 
-/* ---------- Stage wave design tool ---------- */
-const STAGE_STORAGE_KEY = 'glass_d_stage_design_v1';
-const STAGE_COUNT = 7;
+/* ---------- Stage wave design tool (table form) ---------- */
+const STAGE_STORAGE_KEY = 'glass_d_stage_design_v2';
+const STAGE_COUNT = 4; // 실제 게임 스테이지 수: 4개 (스테이지당 Wave 1~10)
 const WAVE_COUNT = 10;
-const DEFAULT_DLC_STAGES = [3, 6]; // 스테이지 03, 06 은 기존 와이어프레임 기준 DLC 표시 (체크박스로 언제든 변경 가능)
+const WAVE_COLS = [
+  { key: 'theme', label: '테마', className: 'col-theme', placeholder: '예: 빌드 예열' },
+  { key: 'monsters', label: '적 구성', className: 'col-monsters', multiline: true, placeholder: '예: MON-001 슬라임 ×2\nMON-003 고블린 ×1' },
+  { key: 'turns', label: '목표 처리턴', placeholder: '예: 4~6턴' },
+  { key: 'gold', label: '골드 보상', placeholder: '예: 30G' },
+  { key: 'drop', label: '드롭 테이블', placeholder: '예: T1 70% / T2 25% / T3 5%' },
+  { key: 'note', label: '비고', placeholder: '예: ✅ 첫 상점' }
+];
 
 function emptyWave() {
-  return { theme: '', turns: '', gold: '', drop: '', shop: false, monsters: [] };
+  return { theme: '', monsters: '', turns: '', gold: '', drop: '', note: '' };
 }
 
-function emptyStage(n) {
-  const idx = String(n).padStart(2, '0');
-  return {
-    name: '스테이지 ' + idx,
-    dlc: DEFAULT_DLC_STAGES.includes(n),
-    waves: Array.from({ length: WAVE_COUNT }, emptyWave)
-  };
+// DB > 몬스터 > "Wave 배치표" 시트에 있던 실제 게임 데이터를 그대로 가져와 스테이지 01의 기본값으로 사용.
+function getRealWaveSheetAsWaves() {
+  const sheet = ((DATA['몬스터'] || {})['Wave 배치표']) || null;
+  if (!sheet || !Array.isArray(sheet.rows) || sheet.rows.length === 0) {
+    return Array.from({ length: WAVE_COUNT }, emptyWave);
+  }
+  return sheet.rows.map(r => ({
+    theme: cell(r['테마']),
+    monsters: cell(r['적 구성']),
+    turns: cell(r['목표 처리턴']),
+    gold: cell(r['골드 보상']),
+    drop: cell(r['드롭 테이블']),
+    note: cell(r['비고'])
+  }));
 }
 
 function defaultStageDesign() {
   const d = {};
-  for (let n = 1; n <= STAGE_COUNT; n++) d['stage' + n] = emptyStage(n);
+  for (let n = 1; n <= STAGE_COUNT; n++) {
+    d['stage' + n] = {
+      name: '스테이지 ' + String(n).padStart(2, '0'),
+      waves: n === 1 ? getRealWaveSheetAsWaves() : Array.from({ length: WAVE_COUNT }, emptyWave)
+    };
+  }
   return d;
 }
 
 function loadStageDesign() {
   try {
-    const raw = localStorage.getItem(STAGE_STORAGE_KEY);
-    if (!raw) return defaultStageDesign();
-    const parsed = JSON.parse(raw);
     const base = defaultStageDesign();
+    const raw = localStorage.getItem(STAGE_STORAGE_KEY);
+    if (!raw) return base;
+    const parsed = JSON.parse(raw);
     Object.keys(base).forEach(k => {
       if (parsed[k]) {
         base[k].name = parsed[k].name || base[k].name;
-        base[k].dlc = !!parsed[k].dlc;
         base[k].waves = Array.from({ length: WAVE_COUNT }, (_, i) => {
           const w = (parsed[k].waves || [])[i];
-          return w ? Object.assign(emptyWave(), w, { monsters: Array.isArray(w.monsters) ? w.monsters : [] }) : emptyWave();
+          return w ? Object.assign(emptyWave(), w) : emptyWave();
         });
       }
     });
@@ -1351,7 +1361,6 @@ function loadStageDesign() {
 
 let STAGE_DESIGN = loadStageDesign();
 let currentStageKey = 'stage1';
-let currentWaveIdx = 0;
 let stageSaveStatusTimer = null;
 let stageSaveDebounceTimer = null;
 
@@ -1372,27 +1381,8 @@ function saveStageDesignDebounced() {
   stageSaveDebounceTimer = setTimeout(saveStageDesign, 400);
 }
 
-function waveIsEmpty(w) {
-  return !w.theme && !w.turns && !w.gold && !w.drop && !w.shop && (!w.monsters || w.monsters.length === 0);
-}
-
 function stageIsEmpty(stage) {
-  return stage.waves.every(waveIsEmpty);
-}
-
-function getMonsterRows() {
-  return (((DATA['몬스터'] || {})['몬스터 DB'] || {}).rows) || [];
-}
-
-function findMonster(id) {
-  return getMonsterRows().find(r => cell(r['ID']) === id);
-}
-
-function monsterOptionLabel(r) {
-  const id = cell(r['ID']);
-  const name = cell(r['한글명'] || '');
-  const grade = cell(r['등급'] || '');
-  return id + ' — ' + name + (grade ? ' (' + grade + ')' : '');
+  return stage.waves.every(w => !w.theme && !w.monsters && !w.turns && !w.gold && !w.drop && !w.note);
 }
 
 function renderStageTabs() {
@@ -1405,10 +1395,9 @@ function renderStageTabs() {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'tab' + (key === currentStageKey ? ' active' : '');
-    b.textContent = stage.name + (stage.dlc ? ' (DLC)' : '');
+    b.textContent = stage.name;
     b.addEventListener('click', () => {
       currentStageKey = key;
-      currentWaveIdx = 0;
       renderStagePage();
     });
     wrap.appendChild(b);
@@ -1418,324 +1407,95 @@ function renderStageTabs() {
 function renderStageHead() {
   const stage = STAGE_DESIGN[currentStageKey];
   const nameInput = document.getElementById('stageNameInput');
-  const dlcCheck = document.getElementById('stageDlcCheck');
   if (nameInput) nameInput.value = stage.name;
-  if (dlcCheck) dlcCheck.checked = !!stage.dlc;
-}
-
-function renderWaveTabs() {
-  const wrap = document.getElementById('waveTabs');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-  const stage = STAGE_DESIGN[currentStageKey];
-  for (let i = 0; i < WAVE_COUNT; i++) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    const filled = !waveIsEmpty(stage.waves[i]);
-    b.className = 'tab' + (i === currentWaveIdx ? ' active' : '') + (filled ? ' wave-filled' : '');
-    b.textContent = 'Wave ' + (i + 1) + (i === WAVE_COUNT - 1 ? ' (보스)' : '');
-    b.addEventListener('click', () => {
-      currentWaveIdx = i;
-      renderWaveForm();
-      renderWaveTabs();
-    });
-    wrap.appendChild(b);
+  const copySel = document.getElementById('stageCopySource');
+  if (copySel) {
+    copySel.innerHTML = '';
+    for (let n = 1; n <= STAGE_COUNT; n++) {
+      const key = 'stage' + n;
+      if (key === currentStageKey) continue;
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = STAGE_DESIGN[key].name;
+      copySel.appendChild(opt);
+    }
   }
 }
 
-function renderMonRow(wave, m, idx) {
-  const row = document.createElement('div');
-  row.className = 'mon-row';
-
-  const order = document.createElement('div');
-  order.className = 'mon-order';
-  order.textContent = String(idx + 1);
-  row.appendChild(order);
-
-  const sel = document.createElement('select');
-  const rows = getMonsterRows();
-  rows.forEach(r => {
-    const id = cell(r['ID']);
-    if (!id) return;
-    const opt = document.createElement('option');
-    opt.value = id;
-    opt.textContent = monsterOptionLabel(r);
-    if (id === m.id) opt.selected = true;
-    sel.appendChild(opt);
-  });
-
-  const statLabel = document.createElement('span');
-  statLabel.className = 'mon-stat';
-  function refreshStatLabel() {
-    const mon = findMonster(m.id);
-    statLabel.textContent = mon ? ('HP ' + cell(mon['HP']) + ' / ATK ' + cell(mon['ATK']) + ' / DEF ' + cell(mon['DEF'])) : '';
-  }
-  refreshStatLabel();
-  sel.addEventListener('change', () => { m.id = sel.value; saveStageDesignDebounced(); refreshStatLabel(); });
-  row.appendChild(sel);
-
-  const qty = document.createElement('input');
-  qty.type = 'number';
-  qty.min = '1';
-  qty.className = 'mon-qty';
-  qty.value = String(m.qty || 1);
-  qty.title = '수량';
-  qty.addEventListener('input', () => { m.qty = Math.max(1, parseInt(qty.value, 10) || 1); saveStageDesignDebounced(); });
-  row.appendChild(qty);
-
-  const note = document.createElement('input');
-  note.type = 'text';
-  note.className = 'mon-note';
-  note.placeholder = '비고 (예: 광폭화 체크)';
-  note.value = m.note || '';
-  note.addEventListener('input', () => { m.note = note.value; saveStageDesignDebounced(); });
-  row.appendChild(note);
-
-  row.appendChild(statLabel);
-
-  const actions = document.createElement('div');
-  actions.className = 'mon-actions';
-
-  const upBtn = document.createElement('button');
-  upBtn.type = 'button';
-  upBtn.className = 'icon-btn';
-  upBtn.textContent = '\u25B2';
-  upBtn.title = '위로';
-  upBtn.disabled = idx === 0;
-  upBtn.addEventListener('click', () => {
-    if (idx === 0) return;
-    const arr = wave.monsters;
-    const tmp = arr[idx - 1]; arr[idx - 1] = arr[idx]; arr[idx] = tmp;
-    saveStageDesign();
-    renderWaveForm();
-  });
-  actions.appendChild(upBtn);
-
-  const downBtn = document.createElement('button');
-  downBtn.type = 'button';
-  downBtn.className = 'icon-btn';
-  downBtn.textContent = '\u25BC';
-  downBtn.title = '아래로';
-  downBtn.disabled = idx === wave.monsters.length - 1;
-  downBtn.addEventListener('click', () => {
-    if (idx === wave.monsters.length - 1) return;
-    const arr = wave.monsters;
-    const tmp = arr[idx + 1]; arr[idx + 1] = arr[idx]; arr[idx] = tmp;
-    saveStageDesign();
-    renderWaveForm();
-  });
-  actions.appendChild(downBtn);
-
-  const delBtn = document.createElement('button');
-  delBtn.type = 'button';
-  delBtn.className = 'icon-btn danger';
-  delBtn.textContent = '\u2715';
-  delBtn.title = '삭제';
-  delBtn.addEventListener('click', () => {
-    wave.monsters.splice(idx, 1);
-    saveStageDesign();
-    renderWaveForm();
-    renderWaveTabs();
-  });
-  actions.appendChild(delBtn);
-
-  row.appendChild(actions);
-  return row;
-}
-
-function renderWaveForm() {
-  const host = document.getElementById('waveForm');
+function renderWaveTable() {
+  const host = document.getElementById('waveTableWrap');
   if (!host) return;
   const stage = STAGE_DESIGN[currentStageKey];
-  const wave = stage.waves[currentWaveIdx];
-  const isBoss = currentWaveIdx === WAVE_COUNT - 1;
 
   host.innerHTML = '';
+  const table = document.createElement('table');
+  table.className = 'wave-table';
 
-  const grid = document.createElement('div');
-  grid.className = 'wave-grid';
+  const thead = document.createElement('thead');
+  const trh = document.createElement('tr');
+  ['Wave'].concat(WAVE_COLS.map(c => c.label)).forEach(label => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    trh.appendChild(th);
+  });
+  thead.appendChild(trh);
+  table.appendChild(thead);
 
-  function makeField(labelText, inputEl, full) {
-    const f = document.createElement('div');
-    if (full) f.className = 'field-full';
-    const l = document.createElement('label');
-    l.textContent = labelText;
-    f.appendChild(l);
-    f.appendChild(inputEl);
-    return f;
-  }
+  const tbody = document.createElement('tbody');
+  stage.waves.forEach((wave, i) => {
+    const tr = document.createElement('tr');
 
-  const themeInput = document.createElement('input');
-  themeInput.type = 'text';
-  themeInput.value = wave.theme || '';
-  themeInput.placeholder = isBoss ? '예: 히로인 보스 Phase 1~3' : '예: 분열+선공 기본 패턴';
-  themeInput.addEventListener('input', () => { wave.theme = themeInput.value; saveStageDesignDebounced(); renderWaveTabs(); });
-  grid.appendChild(makeField('테마 / 설계 의도', themeInput, true));
+    const tdWave = document.createElement('td');
+    tdWave.innerHTML = '<strong>Wave ' + (i + 1) + '</strong>' + (i === WAVE_COUNT - 1 ? '<br><span class="count">보스</span>' : '');
+    tr.appendChild(tdWave);
 
-  const turnsInput = document.createElement('input');
-  turnsInput.type = 'text';
-  turnsInput.value = wave.turns || '';
-  turnsInput.placeholder = '예: 6~8';
-  turnsInput.addEventListener('input', () => { wave.turns = turnsInput.value; saveStageDesignDebounced(); });
-  grid.appendChild(makeField('목표 처리 턴', turnsInput));
-
-  const goldInput = document.createElement('input');
-  goldInput.type = 'text';
-  goldInput.value = wave.gold || '';
-  goldInput.placeholder = '예: 60G';
-  goldInput.addEventListener('input', () => { wave.gold = goldInput.value; saveStageDesignDebounced(); });
-  grid.appendChild(makeField('골드 보상', goldInput));
-
-  const dropInput = document.createElement('input');
-  dropInput.type = 'text';
-  dropInput.value = wave.drop || '';
-  dropInput.placeholder = '예: 4개 (T1 70% / T2 25% / T3 5%)';
-  dropInput.addEventListener('input', () => { wave.drop = dropInput.value; saveStageDesignDebounced(); });
-  grid.appendChild(makeField('아이템 드롭', dropInput));
-
-  const shopWrap = document.createElement('div');
-  const shopLabel = document.createElement('label');
-  shopLabel.textContent = '상점';
-  const shopRow = document.createElement('div');
-  shopRow.className = 'wave-shop-row';
-  const shopCheck = document.createElement('input');
-  shopCheck.type = 'checkbox';
-  shopCheck.checked = !!wave.shop;
-  shopCheck.addEventListener('change', () => { wave.shop = shopCheck.checked; saveStageDesign(); renderWaveTabs(); });
-  const shopText = document.createElement('span');
-  shopText.className = 'count';
-  shopText.textContent = '클리어 후 상점 오픈';
-  shopRow.appendChild(shopCheck);
-  shopRow.appendChild(shopText);
-  shopWrap.appendChild(shopLabel);
-  shopWrap.appendChild(shopRow);
-  grid.appendChild(shopWrap);
-
-  host.appendChild(grid);
-
-  const monHeader = document.createElement('label');
-  monHeader.textContent = '몬스터 등장 순서 (위 → 아래)';
-  host.appendChild(monHeader);
-
-  const monList = document.createElement('div');
-  monList.className = 'mon-list';
-
-  if (!wave.monsters || wave.monsters.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'mon-empty';
-    empty.textContent = isBoss ? '보스전은 SPEC_HeroineBoss.md 참조 — 필요 시 몬스터를 추가하세요.' : '등록된 몬스터가 없습니다. 아래에서 추가하세요.';
-    monList.appendChild(empty);
-  } else {
-    wave.monsters.forEach((m, idx) => {
-      monList.appendChild(renderMonRow(wave, m, idx));
+    WAVE_COLS.forEach(col => {
+      const td = document.createElement('td');
+      if (col.className) td.className = col.className;
+      const input = col.multiline ? document.createElement('textarea') : document.createElement('input');
+      if (!col.multiline) input.type = 'text';
+      input.value = wave[col.key] || '';
+      input.placeholder = col.placeholder || '';
+      input.addEventListener('input', () => {
+        wave[col.key] = input.value;
+        saveStageDesignDebounced();
+      });
+      td.appendChild(input);
+      tr.appendChild(td);
     });
-  }
-  host.appendChild(monList);
 
-  const addRow = document.createElement('div');
-  addRow.className = 'mon-add';
-  const rows = getMonsterRows();
-  const sel = document.createElement('select');
-  const optDefault = document.createElement('option');
-  optDefault.value = '';
-  optDefault.textContent = '몬스터 선택…';
-  sel.appendChild(optDefault);
-  rows.forEach(r => {
-    const id = cell(r['ID']);
-    if (!id) return;
-    const opt = document.createElement('option');
-    opt.value = id;
-    opt.textContent = monsterOptionLabel(r);
-    sel.appendChild(opt);
+    tbody.appendChild(tr);
   });
-  const qtyInput = document.createElement('input');
-  qtyInput.type = 'number';
-  qtyInput.min = '1';
-  qtyInput.value = '1';
-  qtyInput.className = 'mon-qty';
-  qtyInput.title = '수량';
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button';
-  addBtn.className = 'btn';
-  addBtn.textContent = '+ 추가';
-  addBtn.addEventListener('click', () => {
-    if (!sel.value) return;
-    wave.monsters = wave.monsters || [];
-    wave.monsters.push({ id: sel.value, qty: Math.max(1, parseInt(qtyInput.value, 10) || 1), note: '' });
-    saveStageDesign();
-    renderWaveForm();
-    renderWaveTabs();
-  });
-  addRow.appendChild(sel);
-  addRow.appendChild(qtyInput);
-  addRow.appendChild(addBtn);
-  host.appendChild(addRow);
-
-  if (isBoss) {
-    const note = document.createElement('div');
-    note.className = 'stage-boss-note';
-    note.textContent = '※ Wave 10은 통상 히로인 보스전입니다. 몬스터 목록 대신 테마/드롭에 보스 페이즈 정보를 적어도 됩니다.';
-    host.appendChild(note);
-  }
+  table.appendChild(tbody);
+  host.appendChild(table);
 }
 
 function renderStagePage() {
   renderStageTabs();
   renderStageHead();
-  renderWaveTabs();
-  renderWaveForm();
+  renderWaveTable();
 }
 
-// BALANCE_WaveSheet.md 기준 예시 템플릿 (스테이지 1개 분량) — "템플릿 불러오기" 버튼으로 현재 선택된 스테이지에 채워넣기
-const WAVE_TEMPLATE = [
-  { theme:'빌드 예열 — 분열과 선공 기본 패턴', turns:'4~6', gold:'30G', drop:'4개 (T1 70% / T2 25% / T3 5%)', shop:false,
-    monsters:[{id:'MON-001',qty:2,note:''},{id:'MON-003',qty:1,note:''}] },
-  { theme:'레드슬라임 광폭화 도입 + 소환 첫 등장', turns:'5~7', gold:'40G', drop:'4개 (T1 70% / T2 25% / T3 5%)', shop:false,
-    monsters:[{id:'MON-002',qty:1,note:''},{id:'MON-003',qty:1,note:''},{id:'MON-004',qty:1,note:''}] },
-  { theme:'오크 방어무시 + 첫 정예 등장', turns:'6~8', gold:'60G', drop:'4개 (T1 70% / T2 25% / T3 5%)', shop:true,
-    monsters:[{id:'MON-005',qty:1,note:''},{id:'MON-006',qty:1,note:'정예'},{id:'MON-007',qty:1,note:''}] },
-  { theme:'언데드 도입 — 물리면역 + 장막 복합', turns:'5~7', gold:'70G', drop:'4개 (T1 40% / T2 40% / T3 18% / T4 2%)', shop:false,
-    monsters:[{id:'MON-009',qty:1,note:''},{id:'MON-011',qty:1,note:''},{id:'MON-025',qty:1,note:''}] },
-  { theme:'뱀파이어 흡혈 + 네크로맨서 소환 딜레마', turns:'6~8', gold:'80G', drop:'4개 (T1 40% / T2 40% / T3 18% / T4 2%)', shop:false,
-    monsters:[{id:'MON-013',qty:1,note:''},{id:'MON-016',qty:1,note:''},{id:'MON-028',qty:1,note:''}] },
-  { theme:'중반 정예 집중', turns:'6~9', gold:'100G', drop:'4개 (T1 40% / T2 40% / T3 18% / T4 2%)', shop:true,
-    monsters:[{id:'MON-014',qty:1,note:'정예'},{id:'MON-020',qty:1,note:'정예'},{id:'MON-027',qty:1,note:'정예'}] },
-  { theme:'신화 + 원소 복합', turns:'6~9', gold:'120G', drop:'(T2 30% / T3 45% / T4 20% / T5 5%)', shop:false,
-    monsters:[{id:'MON-033',qty:1,note:'정예'},{id:'MON-048',qty:1,note:'정예'},{id:'MON-050',qty:1,note:'정예'}] },
-  { theme:'강대 계열 등장', turns:'6~10', gold:'140G', drop:'(T2 30% / T3 45% / T4 20% / T5 5%)', shop:false,
-    monsters:[{id:'MON-037',qty:1,note:'정예'},{id:'MON-056',qty:1,note:'정예'},{id:'MON-060',qty:1,note:'정예'}] },
-  { theme:'최종 사양 체크', turns:'6~10', gold:'180G', drop:'(T2 30% / T3 45% / T4 20% / T5 5%)', shop:true,
-    monsters:[{id:'MON-062',qty:1,note:'정예'},{id:'MON-063',qty:1,note:'정예'}] },
-  { theme:'히로인 보스 (Phase 1~3, SPEC_HeroineBoss.md 참조)', turns:'-', gold:'500G', drop:'확정 드롭', shop:false,
-    monsters:[] }
-];
-
-function applyWaveTemplate() {
-  const stage = STAGE_DESIGN[currentStageKey];
-  if (!stageIsEmpty(stage)) {
-    const ok = confirm('이 스테이지에는 이미 입력된 데이터가 있습니다. 템플릿으로 덮어쓰시겠습니까?');
+function copyFromStage(sourceKey) {
+  const src = STAGE_DESIGN[sourceKey];
+  const dst = STAGE_DESIGN[currentStageKey];
+  if (!src || !dst) return;
+  if (!stageIsEmpty(dst)) {
+    const ok = confirm('"' + dst.name + '"에 이미 입력된 내용이 있습니다. "' + src.name + '"의 내용으로 덮어쓰시겠습니까?');
     if (!ok) return;
   }
-  stage.waves = WAVE_TEMPLATE.map(w => ({
-    theme: w.theme, turns: w.turns, gold: w.gold, drop: w.drop, shop: w.shop,
-    monsters: w.monsters.map(m => Object.assign({}, m))
-  }));
+  dst.waves = src.waves.map(w => Object.assign({}, w));
   saveStageDesign();
-  renderStagePage();
+  renderWaveTable();
 }
 
 function clearCurrentStage() {
   const stage = STAGE_DESIGN[currentStageKey];
-  const ok = confirm('"' + stage.name + '"의 모든 웨이브 데이터를 초기화합니다. 계속하시겠습니까?');
+  const ok = confirm('"' + stage.name + '"의 모든 웨이브 내용을 초기화합니다. 계속하시겠습니까?');
   if (!ok) return;
-  const n = parseInt(currentStageKey.replace('stage', ''), 10);
-  const fresh = emptyStage(n);
-  fresh.name = stage.name;
-  fresh.dlc = stage.dlc;
-  STAGE_DESIGN[currentStageKey] = fresh;
-  currentWaveIdx = 0;
+  stage.waves = Array.from({ length: WAVE_COUNT }, emptyWave);
   saveStageDesign();
-  renderStagePage();
+  renderWaveTable();
 }
 
 function exportStageDesign() {
@@ -1760,7 +1520,6 @@ function importStageDesignFile(file) {
       localStorage.setItem(STAGE_STORAGE_KEY, JSON.stringify(parsed));
       STAGE_DESIGN = loadStageDesign();
       currentStageKey = 'stage1';
-      currentWaveIdx = 0;
       renderStagePage();
     } catch (e) {
       alert('JSON 파일을 읽는 중 오류가 발생했습니다: ' + e.message);
@@ -1776,14 +1535,11 @@ function importStageDesignFile(file) {
     saveStageDesignDebounced();
     renderStageTabs();
   });
-  const dlcCheck = document.getElementById('stageDlcCheck');
-  if (dlcCheck) dlcCheck.addEventListener('change', (e) => {
-    STAGE_DESIGN[currentStageKey].dlc = e.target.checked;
-    saveStageDesign();
-    renderStageTabs();
+  const copyBtn = document.getElementById('stageCopyBtn');
+  const copySel = document.getElementById('stageCopySource');
+  if (copyBtn && copySel) copyBtn.addEventListener('click', () => {
+    if (copySel.value) copyFromStage(copySel.value);
   });
-  const templateBtn = document.getElementById('stageTemplateBtn');
-  if (templateBtn) templateBtn.addEventListener('click', applyWaveTemplate);
   const clearBtn = document.getElementById('stageClearBtn');
   if (clearBtn) clearBtn.addEventListener('click', clearCurrentStage);
   const exportBtn = document.getElementById('stageExportBtn');
@@ -1802,7 +1558,7 @@ function importStageDesignFile(file) {
 
 const PAGE_META = {
   layout: { title: '레이아웃', sub: '타이틀 · 캐릭터 · 스테이지 · 대화 · 옵션 · 인게임 — 흑백 와이어프레임' },
-  stage: { title: '스테이지', sub: '스테이지 01~07 — 각 스테이지별 Wave 1~10 몬스터 등장 순서/구성 설계' },
+  stage: { title: '스테이지', sub: '스테이지 01~04 — 각 스테이지별 Wave 1~10 배치표 (테이블 편집)' },
   art: { title: '아트 리소스', sub: '' },
   data: { title: 'DB', sub: '몬스터 · 아이템(기본/재료/세트/조합) — HTML 파일만 공유해도 열람 가능 · 장비 크기 당분간 1×1' }
 };
