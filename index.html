@@ -450,7 +450,7 @@
     color:var(--text); font-size:13px; line-height:1.6; white-space:pre-line; padding:2px 0;
   }
   .wave-table td .cell-text:empty::before { content:'—'; color:var(--muted); }
-  .wave-table td.col-monsters { min-width:240px; }
+  .wave-table td.col-monsters { min-width:270px; }
   .wave-table td.col-theme { min-width:160px; }
   .wave-table td.col-turns, .wave-table td.col-gold { width:84px; min-width:84px; }
   .wave-table td.col-turns input, .wave-table td.col-gold input { text-align:center; white-space:nowrap; }
@@ -480,22 +480,23 @@
   .tier-tip .tier-tip-item img { width:16px; height:16px; object-fit:contain; border-radius:3px; background:#000; flex:0 0 16px; }
   .tier-tip .tier-tip-more { font-size:10.5px; color:#64748b; margin-top:4px; }
 
-  /* 적 구성 몬스터 칩(이미지 아이콘 + 마리수 뱃지 + 호버 능력치 툴팁) */
-  .mon-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
-  .mon-chip {
-    position:relative; display:inline-flex; align-items:center; padding:2px;
-    border-radius:8px; background:#0b1220; border:1px solid var(--border); cursor:default;
+  /* 적 구성 몬스터 리스트: [번호][이미지][이름][등급(색상)][마리수] + 호버 능력치 툴팁 */
+  .mon-list { display:flex; flex-direction:column; gap:5px; }
+  .mon-row {
+    position:relative; display:flex; align-items:center; gap:6px; padding:3px 4px;
+    border-radius:6px; font-size:11.5px; cursor:default;
   }
-  .mon-chip:hover, .mon-chip:focus-within { border-color:var(--accent); }
-  .mon-chip-img-wrap { position:relative; display:inline-block; width:24px; height:24px; }
-  .mon-chip-img-wrap img { width:24px; height:24px; object-fit:contain; border-radius:5px; background:#000; display:block; }
-  .mon-chip-qty {
-    position:absolute; right:-4px; bottom:-4px; min-width:15px; text-align:center;
-    background:#0b1220; border:1px solid var(--accent); border-radius:999px; font-size:9.5px;
-    font-weight:800; color:#fff; padding:0 3px; line-height:1.4;
-  }
-  .mon-chip .tier-tip { width:200px; }
-  .mon-chip:hover .tier-tip, .mon-chip:focus-within .tier-tip { display:block; }
+  .mon-row:hover, .mon-row:focus-within { background:#0b1220; }
+  .mon-row-num { color:var(--muted); font-size:10.5px; width:12px; flex:0 0 12px; text-align:right; }
+  .mon-row-img { width:22px; height:22px; object-fit:contain; border-radius:5px; background:#000; flex:0 0 22px; }
+  .mon-row-name { color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mon-row-grade { font-size:10.5px; font-weight:700; white-space:nowrap; }
+  .mon-row-grade.grade-일반 { color:#e2e8f0; }
+  .mon-row-grade.grade-정예 { color:#60a5fa; }
+  .mon-row-grade.grade-히로인보스 { color:#facc15; }
+  .mon-row-qty { color:var(--muted); font-size:11px; white-space:nowrap; margin-left:auto; }
+  .mon-row .tier-tip { left:20px; top:calc(100% + 2px); width:200px; }
+  .mon-row:hover .tier-tip, .mon-row:focus-within .tier-tip { display:block; }
 
   /* 화면 중앙 큰 리스트 팝업 (드롭 테이블 티어 클릭 시) */
   .modal-overlay {
@@ -974,7 +975,7 @@
 
       <div class="toolbar">
         <button type="button" class="btn secondary" id="stageExportBtn">전체 스테이지 내보내기(JSON)</button>
-        <span class="count">스테이지 01~04는 서로 다른 테마의 초안입니다 (밸런스 확정치 아님, 참고용) · 이 표는 읽기 전용이며 클릭해서 수정할 수 없습니다.</span>
+        <span class="count">스테이지 타입 1~4는 서로 다른 속성/테마의 초안입니다 (타입 간 난이도 차이 없음, 밸런스 확정치 아님, 참고용) · 각 타입은 Wave 1~40, 10웨이브마다 히로인 보스 · 이 표는 읽기 전용이며 클릭해서 수정할 수 없습니다.</span>
       </div>
     </main>
 
@@ -1501,8 +1502,8 @@ function renderArtPage() {
 }
 
 /* ---------- Stage wave design tool (table form) ---------- */
-const STAGE_COUNT = 4; // 실제 게임 스테이지 수: 4개 (스테이지당 Wave 1~10)
-const WAVE_COUNT = 10;
+const STAGE_COUNT = 4; // 스테이지 타입 1~4 (난이도 차이가 아니라 속성/테마 차이)
+const WAVE_COUNT = 40; // 타입별 Wave 1~40 연속 진행, 10웨이브마다 히로인 보스
 const WAVE_COLS = [
   { key: 'theme', label: '테마', className: 'col-theme', placeholder: '예: 빌드 예열' },
   { key: 'monsters', label: '적 구성', className: 'col-monsters', multiline: true, placeholder: '예: MON-001 슬라임 ×2\nMON-003 고블린 ×1' },
@@ -1521,61 +1522,180 @@ function mkWave(theme, monsters, turns, gold, drop, note) {
   return { theme, monsters, turns, gold, drop, note: note || '' };
 }
 
-// 스테이지 01: DB > 몬스터 > "Wave 배치표" 실제 데이터 기준. 골드 보상은 상점 웨이브에서 스파이크가
-// 나오는 톱니형 곡선으로 재조정하고, 비고의 체크 아이콘은 제거했다.
+// 스테이지 타입 1: "질서와 그림자" — A.기초 + B.언데드 그룹 중심 (Wave 1~40, 10웨이브마다 히로인 보스).
 const STAGE1_WAVES = [
-  mkWave('빌드 예열', 'MON-001 슬라임 ×2\nMON-003 고블린 ×1', '4~6턴', '30G', 'T1 70% / T2 25% / T3 5%'),
-  mkWave('레드슬라임+소환 도입', 'MON-002 레드슬라임 ×1\nMON-003 고블린 ×1\nMON-004 고블린 사먼 ×1', '5~7턴', '45G', 'T1 70% / T2 25% / T3 5%'),
-  mkWave('첫 정예 등장', 'MON-005 오크 ×1\nMON-006 오크 워리어 ★ ×1\nMON-007 하피 ×1', '6~8턴', '90G', 'T1 70% / T2 25% / T3 5%'),
-  mkWave('언데드+미믹 도입', 'MON-009 스켈레톤 ×1\nMON-011 좀비 ×1\nMON-025 미믹 ×1', '5~7턴', '50G', 'T1 40% / T2 40% / T3 18% / T4 2%'),
-  mkWave('뱀파이어+소환 딜레마', 'MON-013 뱀파이어아 ×1\nMON-016 네크로맨서 ×1\nMON-028 만티코어 ×1', '6~8턴', '70G', 'T1 40% / T2 40% / T3 18% / T4 2%'),
-  mkWave('중반 정예 집중', 'MON-014 뱀파이어 로드 ★ ×1\nMON-020 반시 ★ ×1\nMON-027 아머 미믹 ★ ×1', '6~9턴', '150G', 'T1 40% / T2 40% / T3 18% / T4 2%'),
-  mkWave('신화+원소 복합', 'MON-033 메두사 ★ ×1\nMON-048 위치 ★ ×1\nMON-050 이프리트 ★ ×1', '6~9턴', '85G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
-  mkWave('강대 계열 등장', 'MON-037 미노타우로스 퀸 ★ ×1\nMON-056 크라켄 소환사 ★ ×1\nMON-060 전갈 여왕 ★ ×1', '6~10턴', '115G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
-  mkWave('최종 DPS 체크', 'MON-062 데몬 프린세스 ★ ×1\nMON-063 혼돈의 마녀 ★ ×1', '6~10턴', '260G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
-  mkWave('히로인 보스전', 'MON-064 보스 모드 (히로인 3페이즈)', '24~30턴(총)', '500G(보상)', '— (보상 없음, 클리어 보상)')
+  mkWave('분열 도입', 'MON-001 슬라임 ×1', '4~6턴', '30G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('소환+물리면역 견제', 'MON-004 고블린 사먼 ×1', '4~6턴', '35G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('선공 강화', 'MON-003 고블린 ×1', '4~6턴', '45G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('저주+물리면역 압박', 'MON-019 폴터가이스트 ×1', '4~6턴', '50G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('재생+저주 격돌', 'MON-012 좀비 메이드 ×1', '4~6턴', '55G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('방어무시 심화', 'MON-005 오크 ×1', '4~6턴', '65G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('흡혈+선공 도입', 'MON-013 뱀파이어아 ×1', '5~7턴', '70G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('공포+AP흡수 견제', 'MON-020 반시 ★ ×1', '5~7턴', '75G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('소환+물리면역 강화', 'MON-015 리치 ★ ×1', '5~7턴', '85G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('질서와 그림자 보스전 (1차 각성)', 'MON-064 보스 모드 (질서와 그림자 1차 각성)', '20~24턴(총)', '350G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('소환+물리면역 압박', 'MON-015 리치 ★ ×1', '5~7턴', '90G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('흡혈+보호막 격돌', 'MON-014 뱀파이어 로드 ★ ×1', '5~7턴', '110G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('방어무시+광폭화 심화', 'MON-006 오크 워리어 ★ ×1', '5~7턴', '130G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('흡혈+선공 도입', 'MON-013 뱀파이어아 ×1\nMON-005 오크 ×1', '6~8턴', '150G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('흡혈+선공 견제', 'MON-013 뱀파이어아 ×1\nMON-008 아르피 ★ ×1', '6~8턴', '170G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('방어무시+광폭화 강화', 'MON-006 오크 워리어 ★ ×1\nMON-020 반시 ★ ×1', '6~8턴', '190G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('방어무시+광폭화 압박', 'MON-006 오크 워리어 ★ ×1\nMON-013 뱀파이어아 ×1', '6~8턴', '210G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('소환+물리면역 격돌', 'MON-015 리치 ★ ×1\nMON-013 뱀파이어아 ×1', '6~8턴', '230G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('공포+AP흡수 심화', 'MON-020 반시 ★ ×1\nMON-015 리치 ★ ×1', '6~8턴', '250G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('질서와 그림자 보스전 (2차 각성)', 'MON-064 보스 모드 (질서와 그림자 2차 각성)', '22~26턴(총)', '500G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('소환+물리면역 도입', 'MON-015 리치 ★ ×1\nMON-014 뱀파이어 로드 ★ ×1', '7~9턴', '220G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('흡혈+보호막 견제', 'MON-014 뱀파이어 로드 ★ ×1\nMON-020 반시 ★ ×2', '7~9턴', '270G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('방어무시+광폭화 강화', 'MON-006 오크 워리어 ★ ×1\nMON-014 뱀파이어 로드 ★ ×1', '7~9턴', '320G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('소환+물리면역 압박', 'MON-015 리치 ★ ×1\nMON-020 반시 ★ ×2', '7~9턴', '370G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('흡혈+보호막 격돌', 'MON-014 뱀파이어 로드 ★ ×1\nMON-006 오크 워리어 ★ ×1', '7~9턴', '420G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('소환+물리면역 심화', 'MON-015 리치 ★ ×1\nMON-020 반시 ★ ×2', '7~9턴', '470G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('방어무시+광폭화 도입', 'MON-006 오크 워리어 ★ ×1\nMON-020 반시 ★ ×1\nMON-013 뱀파이어아 ×1', '8~10턴', '515G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('방어무시+광폭화 견제', 'MON-006 오크 워리어 ★ ×1\nMON-020 반시 ★ ×1\nMON-015 리치 ★ ×1', '8~10턴', '565G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('흡혈+보호막 강화', 'MON-014 뱀파이어 로드 ★ ×1\nMON-015 리치 ★ ×1\nMON-020 반시 ★ ×1', '8~10턴', '615G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('질서와 그림자 보스전 (3차 각성)', 'MON-064 보스 모드 (질서와 그림자 3차 각성)', '24~28턴(총)', '650G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('소환+물리면역 압박', 'MON-015 리치 ★ ×1\nMON-006 오크 워리어 ★ ×1\nMON-013 뱀파이어아 ×2', '8~10턴', '450G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('소환+물리면역 격돌', 'MON-015 리치 ★ ×1\nMON-020 반시 ★ ×2\nMON-014 뱀파이어 로드 ★ ×1', '8~10턴', '550G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('방어무시+광폭화 심화', 'MON-006 오크 워리어 ★ ×1\nMON-014 뱀파이어 로드 ★ ×1\nMON-020 반시 ★ ×2', '8~10턴', '655G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('흡혈+보호막 도입', 'MON-014 뱀파이어 로드 ★ ×1\nMON-006 오크 워리어 ★ ×1\nMON-013 뱀파이어아 ×2', '9~11턴', '755G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('소환+물리면역 견제', 'MON-015 리치 ★ ×1\nMON-020 반시 ★ ×2\nMON-014 뱀파이어 로드 ★ ×1', '9~11턴', '855G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('방어무시+광폭화 강화', 'MON-006 오크 워리어 ★ ×1\nMON-014 뱀파이어 로드 ★ ×1\nMON-020 반시 ★ ×2', '9~11턴', '955G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('흡혈+보호막 압박', 'MON-014 뱀파이어 로드 ★ ×1\nMON-006 오크 워리어 ★ ×2\nMON-013 뱀파이어아 ×2', '9~11턴', '1060G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('소환+물리면역 격돌', 'MON-015 리치 ★ ×1\nMON-020 반시 ★ ×2\nMON-014 뱀파이어 로드 ★ ×1', '9~11턴', '1160G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('방어무시+광폭화 심화', 'MON-006 오크 워리어 ★ ×2\nMON-014 뱀파이어 로드 ★ ×1\nMON-020 반시 ★ ×2', '9~11턴', '1260G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('질서와 그림자 보스전 (최종 각성)', 'MON-064 보스 모드 (질서와 그림자 최종 각성)', '26~32턴(총)', '850G(보상)', '— (보상 없음, 클리어 보상)')
 ];
 
-// 스테이지 02: "폐허의 요정숲 & 악마 결계" — 자연/요정(F) + 악마(C) 그룹 중심.
+// 스테이지 타입 2: "매혹의 요마숲" — F.자연/요정 + C.악마 그룹 중심 (Wave 1~40, 10웨이브마다 히로인 보스).
 const STAGE2_WAVES = [
-  mkWave('요정 스웜 대응', 'MON-046 요정 ×2\nMON-047 픽시 ×1', '4~6턴', '40G', 'T1 55% / T2 35% / T3 10%'),
-  mkWave('맹독+재생 견제', 'MON-041 다크엘프 ×1\nMON-042 엘프 ×1', '5~7턴', '55G', 'T1 55% / T2 35% / T3 10%'),
-  mkWave('소환+면역 복합', 'MON-043 드라이어드 ×1\nMON-044 숲의 정령 ×1\nMON-046 요정 ×1', '5~7턴', '120G', 'T1 40% / T2 40% / T3 18% / T4 2%'),
-  mkWave('봉인+공포 도입', 'MON-022 이네비 ×1\nMON-023 인큐버스 ×1', '6~8턴', '65G', 'T1 40% / T2 40% / T3 18% / T4 2%'),
-  mkWave('첫 정예: 지속소환+가시', 'MON-045 트레타니스 ★ ×1\nMON-047 픽시 ×2', '6~8턴', '90G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
-  mkWave('매혹+저주 복합 정예', 'MON-021 서큐버스 ★ ×1\nMON-019 폴터가이스트 ×1', '6~9턴', '190G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
-  mkWave('저주+소환 견제', 'MON-048 위치 ★ ×1\nMON-055 바다 마녀 ×1', '7~9턴', '100G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
-  mkWave('AP드레인+저주+부식', 'MON-024 알라무스 ★ ×1\nMON-032 나가 ×1', '7~9턴', '140G', 'T2 25% / T3 45% / T4 25% / T5 5%'),
-  mkWave('이중 정예 DPS 체크', 'MON-058 거미 여왕 ★ ×1\nMON-021 서큐버스 ★ ×1', '7~10턴', '320G', 'T2 25% / T3 45% / T4 25% / T5 5%'),
-  mkWave('스테이지 보스전 (히로인 2차 각성)', 'MON-064 보스 모드 (요정숲 변형 페이즈)', '24~30턴(총)', '600G(보상)', '— (보상 없음, 클리어 보상)')
+  mkWave('군집+선공 도입', 'MON-046 요정 ×1', '4~6턴', '30G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('군집+저주 견제', 'MON-047 픽시 ×1', '4~6턴', '35G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('재생+선공 강화', 'MON-042 엘프 ×1', '4~6턴', '45G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('군집+저주 압박', 'MON-047 픽시 ×1', '4~6턴', '50G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('물리면역+재생 격돌', 'MON-044 숲의 정령 ×1', '4~6턴', '55G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('관통+중독 심화', 'MON-041 다크엘프 ×1', '4~6턴', '65G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('재생+소환 도입', 'MON-043 드라이어드 ×1', '5~7턴', '70G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('AP흡수+봉인 견제', 'MON-023 인큐버스 ×1', '5~7턴', '75G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('저주+봉인 강화', 'MON-048 위치 ★ ×1', '5~7턴', '85G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('매혹의 요마숲 보스전 (1차 각성)', 'MON-064 보스 모드 (매혹의 요마숲 1차 각성)', '20~24턴(총)', '350G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('저주+봉인 압박', 'MON-048 위치 ★ ×1', '5~7턴', '90G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('소환+재생 격돌', 'MON-045 트레타니스 ★ ×1', '5~7턴', '110G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('저주+봉인 심화', 'MON-048 위치 ★ ×1', '5~7턴', '130G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('관통+중독 도입', 'MON-041 다크엘프 ×1\nMON-022 이네비 ×1', '6~8턴', '150G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('재생+소환 견제', 'MON-043 드라이어드 ×1\nMON-023 인큐버스 ×1', '6~8턴', '170G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('재생+소환 강화', 'MON-043 드라이어드 ×1\nMON-022 이네비 ×1', '6~8턴', '190G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('AP흡수+봉인 압박', 'MON-023 인큐버스 ×1\nMON-043 드라이어드 ×1', '6~8턴', '210G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('저주+봉인 격돌', 'MON-048 위치 ★ ×1\nMON-043 드라이어드 ×1', '6~8턴', '230G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('봉인+공포 심화', 'MON-022 이네비 ×1\nMON-048 위치 ★ ×1', '6~8턴', '250G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('매혹의 요마숲 보스전 (2차 각성)', 'MON-064 보스 모드 (매혹의 요마숲 2차 각성)', '22~26턴(총)', '500G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('저주+봉인 도입', 'MON-048 위치 ★ ×1\nMON-023 인큐버스 ×1', '7~9턴', '220G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('소환+재생 견제', 'MON-045 트레타니스 ★ ×1\nMON-023 인큐버스 ×1', '7~9턴', '270G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('저주+봉인 강화', 'MON-048 위치 ★ ×1\nMON-045 트레타니스 ★ ×1', '7~9턴', '320G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('봉인+흡혈 압박', 'MON-021 서큐버스 ★ ×1\nMON-048 위치 ★ ×1', '7~9턴', '370G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('소환+재생 격돌', 'MON-045 트레타니스 ★ ×1\nMON-048 위치 ★ ×1', '7~9턴', '420G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('AP흡수+저주 심화', 'MON-024 알라무스 ★ ×1\nMON-021 서큐버스 ★ ×1', '7~9턴', '470G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('저주+봉인 도입', 'MON-048 위치 ★ ×1\nMON-022 이네비 ×1\nMON-021 서큐버스 ★ ×1', '8~10턴', '515G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('AP흡수+봉인 견제', 'MON-023 인큐버스 ×1\nMON-021 서큐버스 ★ ×1\nMON-048 위치 ★ ×1', '8~10턴', '565G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('소환+재생 강화', 'MON-045 트레타니스 ★ ×1\nMON-023 인큐버스 ×1\nMON-048 위치 ★ ×1', '8~10턴', '615G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('매혹의 요마숲 보스전 (3차 각성)', 'MON-064 보스 모드 (매혹의 요마숲 3차 각성)', '24~28턴(총)', '650G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('저주+봉인 압박', 'MON-048 위치 ★ ×1\nMON-021 서큐버스 ★ ×1\nMON-022 이네비 ×1', '8~10턴', '450G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('봉인+흡혈 격돌', 'MON-021 서큐버스 ★ ×1\nMON-023 인큐버스 ×1\nMON-045 트레타니스 ★ ×1', '8~10턴', '550G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('저주+봉인 심화', 'MON-048 위치 ★ ×1\nMON-045 트레타니스 ★ ×1\nMON-023 인큐버스 ×1', '8~10턴', '655G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('봉인+흡혈 도입', 'MON-021 서큐버스 ★ ×1\nMON-048 위치 ★ ×1\nMON-023 인큐버스 ×1', '9~11턴', '755G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('소환+재생 견제', 'MON-045 트레타니스 ★ ×1\nMON-048 위치 ★ ×1\nMON-021 서큐버스 ★ ×1', '9~11턴', '855G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('AP흡수+저주 강화', 'MON-024 알라무스 ★ ×1\nMON-021 서큐버스 ★ ×1\nMON-048 위치 ★ ×1', '9~11턴', '955G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('AP흡수+저주 압박', 'MON-024 알라무스 ★ ×1\nMON-045 트레타니스 ★ ×1\nMON-023 인큐버스 ×2', '9~11턴', '1060G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('봉인+흡혈 격돌', 'MON-021 서큐버스 ★ ×1\nMON-048 위치 ★ ×1\nMON-024 알라무스 ★ ×1', '9~11턴', '1160G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('소환+재생 심화', 'MON-045 트레타니스 ★ ×1\nMON-024 알라무스 ★ ×1\nMON-048 위치 ★ ×1', '9~11턴', '1260G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('매혹의 요마숲 보스전 (최종 각성)', 'MON-064 보스 모드 (매혹의 요마숲 최종 각성)', '26~32턴(총)', '850G(보상)', '— (보상 없음, 클리어 보상)')
 ];
 
-// 스테이지 03: "용의 둥지 & 원소 폭풍" — 트릭/드래곤(D) + 원소(G) 그룹 중심.
+// 스테이지 타입 3: "환영의 폭풍" — D.트릭/드래곤 + G.원소 그룹 중심 (Wave 1~40, 10웨이브마다 히로인 보스).
 const STAGE3_WAVES = [
-  mkWave('함정+맹독 입문', 'MON-025 미믹 ×1\nMON-028 만티코어 ×1', '5~7턴', '55G', 'T2 35% / T3 45% / T4 18% / T5 2%'),
-  mkWave('군집+부식 대응', 'MON-031 라피야 ×1\nMON-032 나가 ×1', '5~7턴', '75G', 'T2 35% / T3 45% / T4 18% / T5 2%'),
-  mkWave('속성 저항 체크', 'MON-049 화염정령 ×1\nMON-051 살라만더 ×1', '6~8턴', '160G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
-  mkWave('광폭화+스턴 연쇄', 'MON-029 와이번 ×1\nMON-052 빙의 정령 ×1', '6~8턴', '85G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
-  mkWave('분열+소환 복합 정예', 'MON-026 슬라임 퀸 ★ ×1\nMON-031 라피야 ×2', '7~9턴', '120G', 'T2 25% / T3 45% / T4 25% / T5 5%'),
-  mkWave('스턴+봉인 이중 정예', 'MON-053 설녀 ★ ×1\nMON-054 Frost Witch ★ ×1', '7~9턴', '250G', 'T2 25% / T3 45% / T4 25% / T5 5%'),
-  mkWave('광폭+가시+흡혈 단일 강적', 'MON-030 드레곤 걸 ★ ×1', '7~9턴', '130G', 'T3 40% / T4 40% / T5 20%'),
-  mkWave('화염 면역+스턴 압박', 'MON-050 이프리트 ★ ×1\nMON-034 고르곤 ×1', '7~10턴', '190G', 'T3 40% / T4 40% / T5 20%'),
-  mkWave('최종 원소 DPS 체크', 'MON-035 키메라 ★ ×1\nMON-056 크라켄 소환사 ★ ×1', '8~10턴', '420G', 'T3 35% / T4 40% / T5 25%'),
-  mkWave('스테이지 보스전 (히로인 3차 각성)', 'MON-064 보스 모드 (용의 둥지 변형 페이즈)', '26~32턴(총)', '750G(보상)', '— (보상 없음, 클리어 보상)')
+  mkWave('마비+마법면역 도입', 'MON-052 빙의 정령 ×1', '4~6턴', '30G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('가시+마법면역 견제', 'MON-049 화염정령 ×1', '4~6턴', '35G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('중독+부식 강화', 'MON-051 살라만더 ×1', '4~6턴', '45G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('마비+마법면역 압박', 'MON-052 빙의 정령 ×1', '4~6턴', '50G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('가시+마법면역 격돌', 'MON-049 화염정령 ×1', '4~6턴', '55G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('군집+선공 심화', 'MON-031 라피야 ×1', '4~6턴', '65G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('보호막+선공 도입', 'MON-025 미믹 ×1', '5~7턴', '70G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('관통+중독 견제', 'MON-028 만티코어 ×1', '5~7턴', '75G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('분열+소환 강화', 'MON-026 슬라임 퀸 ★ ×1', '5~7턴', '85G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('환영의 폭풍 보스전 (1차 각성)', 'MON-064 보스 모드 (환영의 폭풍 1차 각성)', '20~24턴(총)', '350G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('분열+소환 압박', 'MON-026 슬라임 퀸 ★ ×1', '5~7턴', '90G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('마비+AP흡수 격돌', 'MON-053 설녀 ★ ×1', '5~7턴', '110G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('마비+봉인 심화', 'MON-054 Frost Witch ★ ×1', '5~7턴', '130G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('보호막+선공 도입', 'MON-025 미믹 ×1\nMON-031 라피야 ×1', '6~8턴', '150G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('관통+중독 견제', 'MON-028 만티코어 ×1\nMON-055 바다 마녀 ×1', '6~8턴', '170G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('광폭화+선공 강화', 'MON-029 와이번 ×1\nMON-055 바다 마녀 ×1', '6~8턴', '190G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('광폭화+선공 압박', 'MON-029 와이번 ×1\nMON-028 만티코어 ×1', '6~8턴', '210G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('분열+소환 격돌', 'MON-026 슬라임 퀸 ★ ×1\nMON-028 만티코어 ×1', '6~8턴', '230G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('저주+소환 심화', 'MON-055 바다 마녀 ×1\nMON-026 슬라임 퀸 ★ ×1', '6~8턴', '250G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('환영의 폭풍 보스전 (2차 각성)', 'MON-064 보스 모드 (환영의 폭풍 2차 각성)', '22~26턴(총)', '500G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('분열+소환 도입', 'MON-026 슬라임 퀸 ★ ×1\nMON-029 와이번 ×1', '7~9턴', '220G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('분열+소환 견제', 'MON-026 슬라임 퀸 ★ ×1\nMON-054 Frost Witch ★ ×1', '7~9턴', '270G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('마비+봉인 강화', 'MON-054 Frost Witch ★ ×1\nMON-053 설녀 ★ ×1', '7~9턴', '320G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('광폭화+가시 압박', 'MON-050 이프리트 ★ ×1\nMON-053 설녀 ★ ×1', '7~9턴', '370G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('소환+AP흡수 격돌', 'MON-056 크라켄 소환사 ★ ×1\nMON-027 아머 미믹 ★ ×1', '7~9턴', '420G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('마비+봉인 심화', 'MON-054 Frost Witch ★ ×1\nMON-056 크라켄 소환사 ★ ×1', '7~9턴', '470G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('분열+소환 도입', 'MON-026 슬라임 퀸 ★ ×1\nMON-055 바다 마녀 ×1\nMON-028 만티코어 ×1', '8~10턴', '515G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('마비+AP흡수 견제', 'MON-053 설녀 ★ ×1\nMON-055 바다 마녀 ×1\nMON-026 슬라임 퀸 ★ ×1', '8~10턴', '565G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('광폭화+가시 강화', 'MON-050 이프리트 ★ ×1\nMON-026 슬라임 퀸 ★ ×1\nMON-029 와이번 ×1', '8~10턴', '615G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('환영의 폭풍 보스전 (3차 각성)', 'MON-064 보스 모드 (환영의 폭풍 3차 각성)', '24~28턴(총)', '650G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('마비+AP흡수 압박', 'MON-053 설녀 ★ ×1\nMON-050 이프리트 ★ ×1\nMON-029 와이번 ×1', '8~10턴', '450G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('광폭화+가시 격돌', 'MON-050 이프리트 ★ ×1\nMON-026 슬라임 퀸 ★ ×1\nMON-053 설녀 ★ ×1', '8~10턴', '550G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('마비+봉인 심화', 'MON-054 Frost Witch ★ ×1\nMON-053 설녀 ★ ×1\nMON-056 크라켄 소환사 ★ ×1', '8~10턴', '655G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('광폭화+가시 도입', 'MON-050 이프리트 ★ ×1\nMON-053 설녀 ★ ×1\nMON-027 아머 미믹 ★ ×1', '9~11턴', '755G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('광폭화+가시 견제', 'MON-050 이프리트 ★ ×1\nMON-027 아머 미믹 ★ ×1\nMON-054 Frost Witch ★ ×1', '9~11턴', '855G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('마비+봉인 강화', 'MON-054 Frost Witch ★ ×1\nMON-056 크라켄 소환사 ★ ×1\nMON-050 이프리트 ★ ×1', '9~11턴', '955G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('보호막+가시 압박', 'MON-027 아머 미믹 ★ ×1\nMON-054 Frost Witch ★ ×1\nMON-030 드레곤 걸 ★ ×1', '9~11턴', '1060G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('소환+AP흡수 격돌', 'MON-056 크라켄 소환사 ★ ×1\nMON-054 Frost Witch ★ ×1\nMON-027 아머 미믹 ★ ×1', '9~11턴', '1160G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('소환+AP흡수 심화', 'MON-056 크라켄 소환사 ★ ×1\nMON-030 드레곤 걸 ★ ×1\nMON-054 Frost Witch ★ ×1', '9~11턴', '1260G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('환영의 폭풍 보스전 (최종 각성)', 'MON-064 보스 모드 (환영의 폭풍 최종 각성)', '26~32턴(총)', '850G(보상)', '— (보상 없음, 클리어 보상)')
 ];
 
-// 스테이지 04: "신화의 종언 & 강대종 결전" — 신화/고대(E) + 강대(H) 그룹 중심, 최종 스테이지.
+// 스테이지 타입 4: "신화의 종언" — E.신화/고대 + H.강대 그룹 중심 (Wave 1~40, 10웨이브마다 히로인 보스).
 const STAGE4_WAVES = [
-  mkWave('신화 입문: 석화+방무', 'MON-034 고르곤 ×1\nMON-036 미노타우로스 ×1', '6~8턴', '70G', 'T3 45% / T4 40% / T5 15%'),
-  mkWave('거인+맹독 조합', 'MON-057 사이클롭스 ×1\nMON-059 스파이더 걸 ×1', '6~8턴', '160G', 'T3 45% / T4 40% / T5 15%'),
-  mkWave('석화 단일 정예', 'MON-033 메두사 ★ ×1', '7~9턴', '90G', 'T3 40% / T4 42% / T5 18%'),
-  mkWave('저주+재생 압박', 'MON-038 아누비스 ★ ×1\nMON-034 고르곤 ×1', '7~9턴', '130G', 'T3 40% / T4 42% / T5 18%'),
-  mkWave('봉인+맹독 군단', 'MON-058 거미 여왕 ★ ×1\nMON-059 스파이더 걸 ×1', '7~9턴', '260G', 'T3 35% / T4 40% / T5 25%'),
-  mkWave('삼중 특성 복합 정예', 'MON-035 키메라 ★ ×1\nMON-057 사이클롭스 ×1', '8~10턴', '150G', 'T3 35% / T4 40% / T5 25%'),
-  mkWave('저주+관통+방무 최종급 단일', 'MON-039 세트 ★ ×1', '8~10턴', '210G', 'T4 45% / T5 55%'),
-  mkWave('이중 강대종', 'MON-060 전갈 여왕 ★ ×1\nMON-061 벌레 여왕 ★ ×1', '8~11턴', '380G', 'T4 45% / T5 55%'),
-  mkWave('최종 신화+강대 DPS 체크', 'MON-040 스핑크스 ★ ×1\nMON-062 데몬 프린세스 ★ ×1', '9~12턴', '480G', 'T4 35% / T5 65%'),
-  mkWave('최종 보스전 (히로인 최종 각성)', 'MON-064 보스 모드 (최종 3페이즈)', '28~34턴(총)', '900G(보상)', '— (보상 없음, 최종 클리어 보상)')
+  mkWave('분열 도입', 'MON-001 슬라임 ×1', '4~6턴', '30G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('중독+마비 견제', 'MON-059 스파이더 걸 ×1', '4~6턴', '35G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('마비+가시 강화', 'MON-034 고르곤 ×1', '4~6턴', '45G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('중독+마비 압박', 'MON-059 스파이더 걸 ×1', '4~6턴', '50G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('마비+가시 격돌', 'MON-034 고르곤 ×1', '4~6턴', '55G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('방어무시+광폭화 심화', 'MON-036 미노타우로스 ×1', '4~6턴', '65G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('중독+마비 도입', 'MON-059 스파이더 걸 ×1', '5~7턴', '70G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('마비+가시 견제', 'MON-034 고르곤 ×1', '5~7턴', '75G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('방어무시+광폭화 강화', 'MON-036 미노타우로스 ×1', '5~7턴', '85G', 'T1 60% / T2 30% / T3 10%'),
+  mkWave('신화의 종언 보스전 (1차 각성)', 'MON-064 보스 모드 (신화의 종언 1차 각성)', '20~24턴(총)', '350G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('마비+가시 압박', 'MON-034 고르곤 ×1', '5~7턴', '90G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('방어무시+광폭화 격돌', 'MON-036 미노타우로스 ×1', '5~7턴', '110G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('방어무시+마비 심화', 'MON-057 사이클롭스 ×1', '5~7턴', '130G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('중독+마비 도입', 'MON-059 스파이더 걸 ×1\nMON-036 미노타우로스 ×1', '6~8턴', '150G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('마비+가시 견제', 'MON-034 고르곤 ×1\nMON-033 메두사 ★ ×1', '6~8턴', '170G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('방어무시+광폭화 강화', 'MON-036 미노타우로스 ×1\nMON-059 스파이더 걸 ×1', '6~8턴', '190G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('마비+가시 압박', 'MON-034 고르곤 ×1\nMON-033 메두사 ★ ×1', '6~8턴', '210G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('방어무시+광폭화 격돌', 'MON-036 미노타우로스 ×1\nMON-033 메두사 ★ ×1', '6~8턴', '230G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('중독+마비 심화', 'MON-059 스파이더 걸 ×1\nMON-034 고르곤 ×1', '6~8턴', '250G', 'T1 30% / T2 40% / T3 25% / T4 5%'),
+  mkWave('신화의 종언 보스전 (2차 각성)', 'MON-064 보스 모드 (신화의 종언 2차 각성)', '22~26턴(총)', '500G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('방어무시+광폭화 도입', 'MON-036 미노타우로스 ×1\nMON-033 메두사 ★ ×1', '7~9턴', '220G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('마비+가시 견제', 'MON-034 고르곤 ×1\nMON-057 사이클롭스 ×1', '7~9턴', '270G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('마비+가시 강화', 'MON-034 고르곤 ×1\nMON-033 메두사 ★ ×1', '7~9턴', '320G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('마비+물리면역 압박', 'MON-033 메두사 ★ ×1\nMON-036 미노타우로스 ×1', '7~9턴', '370G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('방어무시+마비 격돌', 'MON-057 사이클롭스 ×1\nMON-058 거미 여왕 ★ ×1', '7~9턴', '420G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('마비+물리면역 심화', 'MON-033 메두사 ★ ×1\nMON-057 사이클롭스 ×1', '7~9턴', '470G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('마비+가시 도입', 'MON-034 고르곤 ×1\nMON-059 스파이더 걸 ×1\nMON-057 사이클롭스 ×1', '8~10턴', '515G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('방어무시+광폭화 견제', 'MON-036 미노타우로스 ×1\nMON-059 스파이더 걸 ×1\nMON-034 고르곤 ×1', '8~10턴', '565G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('마비+물리면역 강화', 'MON-033 메두사 ★ ×1\nMON-036 미노타우로스 ×1\nMON-059 스파이더 걸 ×1', '8~10턴', '615G', 'T2 30% / T3 40% / T4 25% / T5 5%'),
+  mkWave('신화의 종언 보스전 (3차 각성)', 'MON-064 보스 모드 (신화의 종언 3차 각성)', '24~28턴(총)', '650G(보상)', '— (보상 없음, 클리어 보상)'),
+  mkWave('방어무시+광폭화 압박', 'MON-036 미노타우로스 ×1\nMON-034 고르곤 ×1\nMON-059 스파이더 걸 ×1', '8~10턴', '450G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('방어무시+광폭화 격돌', 'MON-036 미노타우로스 ×1\nMON-057 사이클롭스 ×1\nMON-033 메두사 ★ ×1', '8~10턴', '550G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('방어무시+마비 심화', 'MON-057 사이클롭스 ×1\nMON-033 메두사 ★ ×1\nMON-034 고르곤 ×1', '8~10턴', '655G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('마비+물리면역 도입', 'MON-033 메두사 ★ ×1\nMON-036 미노타우로스 ×1\nMON-058 거미 여왕 ★ ×1', '9~11턴', '755G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('마비+물리면역 견제', 'MON-033 메두사 ★ ×1\nMON-036 미노타우로스 ×1\nMON-057 사이클롭스 ×1', '9~11턴', '855G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('소환+중독 강화', 'MON-058 거미 여왕 ★ ×1\nMON-057 사이클롭스 ×1\nMON-035 키메라 ★ ×1', '9~11턴', '955G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('방어무시+마비 압박', 'MON-057 사이클롭스 ×1\nMON-035 키메라 ★ ×1\nMON-033 메두사 ★ ×1', '9~11턴', '1060G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('방어무시+마비 격돌', 'MON-057 사이클롭스 ×1\nMON-038 아누비스 ★ ×1\nMON-058 거미 여왕 ★ ×1', '9~11턴', '1160G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('저주+AP흡수 심화', 'MON-038 아누비스 ★ ×1\nMON-058 거미 여왕 ★ ×1\nMON-061 벌레 여왕 ★ ×1', '9~11턴', '1260G', 'T3 30% / T4 40% / T5 30%'),
+  mkWave('신화의 종언 보스전 (최종 각성)', 'MON-064 보스 모드 (신화의 종언 최종 각성)', '26~32턴(총)', '850G(보상)', '— (보상 없음, 클리어 보상)')
 ];
 
 const STAGE_DEFAULT_WAVES = [STAGE1_WAVES, STAGE2_WAVES, STAGE3_WAVES, STAGE4_WAVES];
@@ -1585,7 +1705,7 @@ function defaultStageDesign() {
   for (let n = 1; n <= STAGE_COUNT; n++) {
     const preset = STAGE_DEFAULT_WAVES[n - 1];
     d['stage' + n] = {
-      name: '스테이지 ' + String(n).padStart(2, '0'),
+      name: '스테이지 타입 ' + n,
       waves: preset ? preset.map(w => Object.assign({}, w)) : Array.from({ length: WAVE_COUNT }, emptyWave)
     };
   }
@@ -1740,40 +1860,57 @@ function parseMonsterEntries(text) {
   return result;
 }
 
-function buildMonsterChips(text) {
+// 적 구성 칸을 [번호][이미지][이름][등급(색상)][마리수] 리스트로 표시하고,
+// 각 행에 마우스 오버하면 능력치 툴팁을 보여준다.
+function buildMonsterList(text) {
   const wrap = document.createElement('div');
-  wrap.className = 'mon-chips';
-  parseMonsterEntries(text).forEach(entry => {
+  wrap.className = 'mon-list';
+  parseMonsterEntries(text).forEach((entry, idx) => {
     const mon = findMonster(entry.id);
-    const chip = document.createElement('span');
-    chip.className = 'mon-chip';
-    chip.tabIndex = 0;
+    const row = document.createElement('div');
+    row.className = 'mon-row';
+    row.tabIndex = 0;
 
-    const imgWrap = document.createElement('span');
-    imgWrap.className = 'mon-chip-img-wrap';
+    const num = document.createElement('span');
+    num.className = 'mon-row-num';
+    num.textContent = String(idx + 1);
+    row.appendChild(num);
+
     const src = monThumb(entry.id);
     if (src) {
       const img = document.createElement('img');
+      img.className = 'mon-row-img';
       img.src = src;
       img.alt = mon ? cell(mon['한글명']) : entry.id;
-      imgWrap.appendChild(img);
+      row.appendChild(img);
     }
-    if (entry.qty > 1) {
-      const qty = document.createElement('span');
-      qty.className = 'mon-chip-qty';
-      qty.textContent = '×' + entry.qty;
-      imgWrap.appendChild(qty);
+
+    const name = document.createElement('span');
+    name.className = 'mon-row-name';
+    name.textContent = mon ? cell(mon['한글명']) : entry.id;
+    row.appendChild(name);
+
+    const gradeRaw = mon ? cell(mon['등급']) : '';
+    const gradeKey = gradeRaw.replace('★', '');
+    if (gradeRaw) {
+      const grade = document.createElement('span');
+      grade.className = 'mon-row-grade grade-' + gradeKey;
+      grade.textContent = gradeRaw;
+      row.appendChild(grade);
     }
-    chip.appendChild(imgWrap);
+
+    const qty = document.createElement('span');
+    qty.className = 'mon-row-qty';
+    qty.textContent = '×' + (entry.qty || 1);
+    row.appendChild(qty);
 
     const tip = document.createElement('div');
     tip.className = 'tier-tip';
     if (mon) {
-      const grade = cell(mon['등급']);
       const traits = [mon['특성1'], mon['특성2'], mon['특성3'], mon['특성4']].filter(Boolean).join(' / ');
       const h = document.createElement('div');
       h.className = 'tier-tip-h';
-      h.textContent = cell(mon['한글명']) + ' (' + entry.id + (grade ? ', ' + grade : '') + ')';
+      h.textContent = cell(mon['한글명']) + ' (' + entry.id + (gradeRaw ? ', ' + gradeRaw : '') + ')';
       tip.appendChild(h);
       const stat = document.createElement('div');
       stat.className = 'tier-tip-item';
@@ -1791,8 +1928,8 @@ function buildMonsterChips(text) {
       line.textContent = entry.id + ' (DB에 없음)';
       tip.appendChild(line);
     }
-    chip.appendChild(tip);
-    wrap.appendChild(chip);
+    row.appendChild(tip);
+    wrap.appendChild(row);
   });
   return wrap;
 }
@@ -1867,7 +2004,7 @@ function renderWaveTable() {
     const tr = document.createElement('tr');
 
     const tdWave = document.createElement('td');
-    tdWave.innerHTML = '<strong>Wave ' + (i + 1) + '</strong>' + (i === WAVE_COUNT - 1 ? '<br><span class="count">보스</span>' : '');
+    tdWave.innerHTML = '<strong>Wave ' + (i + 1) + '</strong>' + ((i + 1) % 10 === 0 ? '<br><span class="count">보스</span>' : '');
     tr.appendChild(tdWave);
 
     WAVE_COLS.forEach(col => {
@@ -1876,8 +2013,8 @@ function renderWaveTable() {
       const value = col.compute ? col.compute(wave) : (wave[col.key] || '');
 
       if (col.key === 'monsters') {
-        // 몬스터 이미지 칩으로 충분히 표시되므로 원본 텍스트는 노출하지 않는다.
-        td.appendChild(buildMonsterChips(value));
+        // [번호][이미지][이름][등급][마리수] 리스트로 표시하므로 원본 텍스트는 노출하지 않는다.
+        td.appendChild(buildMonsterList(value));
       } else if (col.key === 'drop') {
         td.appendChild(buildCellText(value));
         td.appendChild(buildDropBadges(value));
@@ -2149,7 +2286,7 @@ function renderPowerPage() {
 
 const PAGE_META = {
   layout: { title: '레이아웃', sub: '타이틀 · 캐릭터 · 스테이지 · 대화 · 옵션 · 인게임 — 흑백 와이어프레임' },
-  stage: { title: '스테이지', sub: '스테이지 01~04 — 각 스테이지별 Wave 1~10 배치표 (테이블 편집)' },
+  stage: { title: '스테이지', sub: '스테이지 타입 1~4 — 타입별 Wave 1~40 배치표, 10웨이브마다 히로인 보스 (테이블 편집)' },
   power: { title: '파워 지수', sub: '몬스터 스탯 · 특성을 하나의 숫자로 환산 — 스테이지 난이도 설계 기준(v1 초안)' },
   art: { title: '아트 리소스', sub: '' },
   data: { title: 'DB', sub: '몬스터 · 아이템(기본/재료/세트/조합) — HTML 파일만 공유해도 열람 가능 · 장비 크기 당분간 1×1' }
