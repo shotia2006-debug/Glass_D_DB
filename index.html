@@ -455,6 +455,27 @@
   .wave-table td input:focus, .wave-table td textarea:focus { border-color:var(--accent); background:#0b1220; outline:none; }
   .wave-table td.col-monsters { min-width:240px; }
   .wave-table td.col-theme { min-width:160px; }
+  .wave-table td.col-turns, .wave-table td.col-gold { width:84px; min-width:84px; }
+  .wave-table td.col-turns input, .wave-table td.col-gold input { text-align:center; white-space:nowrap; }
+  .wave-table td.col-drop { min-width:200px; }
+
+  /* 드롭 테이블 티어 배지 + 호버 툴팁 */
+  .drop-badges { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+  .tier-badge {
+    position:relative; display:inline-block; padding:2px 7px; border-radius:999px;
+    background:#0b1220; border:1px solid var(--border); font-size:10.5px; font-weight:700;
+    color:#93c5fd; cursor:default;
+  }
+  .tier-badge:hover, .tier-badge:focus-within { border-color:var(--accent); color:#fff; }
+  .tier-tip {
+    display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:60;
+    width:220px; background:#0b1220; border:1px solid var(--accent); border-radius:8px;
+    padding:9px 10px; box-shadow:0 10px 24px rgba(0,0,0,.45); text-align:left;
+  }
+  .tier-badge:hover .tier-tip, .tier-badge:focus-within .tier-tip { display:block; }
+  .tier-tip .tier-tip-h { font-size:11px; font-weight:800; color:#fff; margin-bottom:5px; }
+  .tier-tip .tier-tip-item { font-size:11px; color:var(--muted); line-height:1.6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tier-tip .tier-tip-more { font-size:10.5px; color:#64748b; margin-top:3px; }
 </style>
 </head>
 <body>
@@ -757,9 +778,6 @@
       <div class="stage-head">
         <input type="text" id="stageNameInput" class="stage-name-input" placeholder="스테이지 이름" />
         <div class="spacer"></div>
-        <select id="stageCopySource"></select>
-        <button type="button" class="btn secondary" id="stageCopyBtn">선택한 스테이지 내용 복사</button>
-        <button type="button" class="btn secondary" id="stageClearBtn">이 스테이지 초기화</button>
         <span class="stage-save-status" id="stageSaveStatus"></span>
       </div>
 
@@ -769,7 +787,7 @@
         <button type="button" class="btn secondary" id="stageExportBtn">전체 스테이지 내보내기(JSON)</button>
         <button type="button" class="btn secondary" id="stageImportBtn">가져오기(JSON)</button>
         <input type="file" id="stageImportFile" accept="application/json" style="display:none" />
-        <span class="count">스테이지 01은 기존 Wave 배치표(실제 설계) 기준으로 채워져 있습니다 · 데이터는 이 브라우저의 localStorage에만 저장되니 내보내기로 백업을 권장합니다.</span>
+        <span class="count">스테이지 01~04는 서로 다른 테마의 초안으로 채워져 있습니다 (밸런스 확정치 아님, 참고용) · 데이터는 이 브라우저의 localStorage에만 저장되니 내보내기로 백업을 권장합니다.</span>
       </div>
     </main>
 
@@ -1296,44 +1314,92 @@ function renderArtPage() {
 }
 
 /* ---------- Stage wave design tool (table form) ---------- */
-const STAGE_STORAGE_KEY = 'glass_d_stage_design_v2';
+const STAGE_STORAGE_KEY = 'glass_d_stage_design_v3';
 const STAGE_COUNT = 4; // 실제 게임 스테이지 수: 4개 (스테이지당 Wave 1~10)
 const WAVE_COUNT = 10;
 const WAVE_COLS = [
   { key: 'theme', label: '테마', className: 'col-theme', placeholder: '예: 빌드 예열' },
   { key: 'monsters', label: '적 구성', className: 'col-monsters', multiline: true, placeholder: '예: MON-001 슬라임 ×2\nMON-003 고블린 ×1' },
-  { key: 'turns', label: '목표 처리턴', placeholder: '예: 4~6턴' },
-  { key: 'gold', label: '골드 보상', placeholder: '예: 30G' },
-  { key: 'drop', label: '드롭 테이블', placeholder: '예: T1 70% / T2 25% / T3 5%' },
-  { key: 'note', label: '비고', placeholder: '예: ✅ 첫 상점' }
+  { key: 'turns', label: '목표 처리턴', className: 'col-turns', placeholder: '예: 4~6턴' },
+  { key: 'gold', label: '골드 보상', className: 'col-gold', placeholder: '예: 30G' },
+  { key: 'drop', label: '드롭 테이블', className: 'col-drop', placeholder: '예: T1 70% / T2 25% / T3 5%' },
+  { key: 'note', label: '비고', placeholder: '예: 첫 상점' }
 ];
 
 function emptyWave() {
   return { theme: '', monsters: '', turns: '', gold: '', drop: '', note: '' };
 }
 
-// DB > 몬스터 > "Wave 배치표" 시트에 있던 실제 게임 데이터를 그대로 가져와 스테이지 01의 기본값으로 사용.
-function getRealWaveSheetAsWaves() {
-  const sheet = ((DATA['몬스터'] || {})['Wave 배치표']) || null;
-  if (!sheet || !Array.isArray(sheet.rows) || sheet.rows.length === 0) {
-    return Array.from({ length: WAVE_COUNT }, emptyWave);
-  }
-  return sheet.rows.map(r => ({
-    theme: cell(r['테마']),
-    monsters: cell(r['적 구성']),
-    turns: cell(r['목표 처리턴']),
-    gold: cell(r['골드 보상']),
-    drop: cell(r['드롭 테이블']),
-    note: cell(r['비고'])
-  }));
+function mkWave(theme, monsters, turns, gold, drop, note) {
+  return { theme, monsters, turns, gold, drop, note: note || '' };
 }
+
+// 스테이지 01: DB > 몬스터 > "Wave 배치표" 실제 데이터 기준. 골드 보상은 상점 웨이브에서 스파이크가
+// 나오는 톱니형 곡선으로 재조정하고, 비고의 체크 아이콘은 제거했다.
+const STAGE1_WAVES = [
+  mkWave('빌드 예열', 'MON-001 슬라임 ×2\nMON-003 고블린 ×1', '4~6턴', '30G', 'T1 70% / T2 25% / T3 5%'),
+  mkWave('레드슬라임+소환 도입', 'MON-002 레드슬라임 ×1\nMON-003 고블린 ×1\nMON-004 고블린 사먼 ×1', '5~7턴', '45G', 'T1 70% / T2 25% / T3 5%'),
+  mkWave('첫 정예 등장', 'MON-005 오크 ×1\nMON-006 오크 워리어 ★ ×1\nMON-007 하피 ×1', '6~8턴', '90G', 'T1 70% / T2 25% / T3 5%', '첫 상점'),
+  mkWave('언데드+미믹 도입', 'MON-009 스켈레톤 ×1\nMON-011 좀비 ×1\nMON-025 미믹 ×1', '5~7턴', '50G', 'T1 40% / T2 40% / T3 18% / T4 2%'),
+  mkWave('뱀파이어+소환 딜레마', 'MON-013 뱀파이어아 ×1\nMON-016 네크로맨서 ×1\nMON-028 만티코어 ×1', '6~8턴', '70G', 'T1 40% / T2 40% / T3 18% / T4 2%'),
+  mkWave('중반 정예 집중', 'MON-014 뱀파이어 로드 ★ ×1\nMON-020 반시 ★ ×1\nMON-027 아머 미믹 ★ ×1', '6~9턴', '150G', 'T1 40% / T2 40% / T3 18% / T4 2%', '두 번째 상점'),
+  mkWave('신화+원소 복합', 'MON-033 메두사 ★ ×1\nMON-048 위치 ★ ×1\nMON-050 이프리트 ★ ×1', '6~9턴', '85G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
+  mkWave('강대 계열 등장', 'MON-037 미노타우로스 퀸 ★ ×1\nMON-056 크라켄 소환사 ★ ×1\nMON-060 전갈 여왕 ★ ×1', '6~10턴', '115G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
+  mkWave('최종 DPS 체크', 'MON-062 데몬 프린세스 ★ ×1\nMON-063 혼돈의 마녀 ★ ×1', '6~10턴', '260G', 'T2 30% / T3 45% / T4 20% / T5 5%', '대규모 상점'),
+  mkWave('히로인 보스전', 'MON-064 보스 모드 (히로인 3페이즈)', '24~30턴(총)', '500G(보상)', '— (보상 없음, 클리어 보상)')
+];
+
+// 스테이지 02: "폐허의 요정숲 & 악마 결계" — 자연/요정(F) + 악마(C) 그룹 중심.
+const STAGE2_WAVES = [
+  mkWave('요정 스웜 대응', 'MON-046 요정 ×2\nMON-047 픽시 ×1', '4~6턴', '40G', 'T1 55% / T2 35% / T3 10%'),
+  mkWave('맹독+재생 견제', 'MON-041 다크엘프 ×1\nMON-042 엘프 ×1', '5~7턴', '55G', 'T1 55% / T2 35% / T3 10%'),
+  mkWave('소환+면역 복합', 'MON-043 드라이어드 ×1\nMON-044 숲의 정령 ×1\nMON-046 요정 ×1', '5~7턴', '120G', 'T1 40% / T2 40% / T3 18% / T4 2%', '첫 상점'),
+  mkWave('봉인+공포 도입', 'MON-022 이네비 ×1\nMON-023 인큐버스 ×1', '6~8턴', '65G', 'T1 40% / T2 40% / T3 18% / T4 2%'),
+  mkWave('첫 정예: 지속소환+가시', 'MON-045 트레타니스 ★ ×1\nMON-047 픽시 ×2', '6~8턴', '90G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
+  mkWave('매혹+저주 복합 정예', 'MON-021 서큐버스 ★ ×1\nMON-019 폴터가이스트 ×1', '6~9턴', '190G', 'T2 30% / T3 45% / T4 20% / T5 5%', '두 번째 상점'),
+  mkWave('저주+소환 견제', 'MON-048 위치 ★ ×1\nMON-055 바다 마녀 ×1', '7~9턴', '100G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
+  mkWave('AP드레인+저주+부식', 'MON-024 알라무스 ★ ×1\nMON-032 나가 ×1', '7~9턴', '140G', 'T2 25% / T3 45% / T4 25% / T5 5%'),
+  mkWave('이중 정예 DPS 체크', 'MON-058 거미 여왕 ★ ×1\nMON-021 서큐버스 ★ ×1', '7~10턴', '320G', 'T2 25% / T3 45% / T4 25% / T5 5%', '대규모 상점'),
+  mkWave('스테이지 보스전 (히로인 2차 각성)', 'MON-064 보스 모드 (요정숲 변형 페이즈)', '24~30턴(총)', '600G(보상)', '— (보상 없음, 클리어 보상)')
+];
+
+// 스테이지 03: "용의 둥지 & 원소 폭풍" — 트릭/드래곤(D) + 원소(G) 그룹 중심.
+const STAGE3_WAVES = [
+  mkWave('함정+맹독 입문', 'MON-025 미믹 ×1\nMON-028 만티코어 ×1', '5~7턴', '55G', 'T2 35% / T3 45% / T4 18% / T5 2%'),
+  mkWave('군집+부식 대응', 'MON-031 라피야 ×1\nMON-032 나가 ×1', '5~7턴', '75G', 'T2 35% / T3 45% / T4 18% / T5 2%'),
+  mkWave('속성 저항 체크', 'MON-049 화염정령 ×1\nMON-051 살라만더 ×1', '6~8턴', '160G', 'T2 30% / T3 45% / T4 20% / T5 5%', '첫 상점'),
+  mkWave('광폭화+스턴 연쇄', 'MON-029 와이번 ×1\nMON-052 빙의 정령 ×1', '6~8턴', '85G', 'T2 30% / T3 45% / T4 20% / T5 5%'),
+  mkWave('분열+소환 복합 정예', 'MON-026 슬라임 퀸 ★ ×1\nMON-031 라피야 ×2', '7~9턴', '120G', 'T2 25% / T3 45% / T4 25% / T5 5%'),
+  mkWave('스턴+봉인 이중 정예', 'MON-053 설녀 ★ ×1\nMON-054 Frost Witch ★ ×1', '7~9턴', '250G', 'T2 25% / T3 45% / T4 25% / T5 5%', '두 번째 상점'),
+  mkWave('광폭+가시+흡혈 단일 강적', 'MON-030 드레곤 걸 ★ ×1', '7~9턴', '130G', 'T3 40% / T4 40% / T5 20%'),
+  mkWave('화염 면역+스턴 압박', 'MON-050 이프리트 ★ ×1\nMON-034 고르곤 ×1', '7~10턴', '190G', 'T3 40% / T4 40% / T5 20%'),
+  mkWave('최종 원소 DPS 체크', 'MON-035 키메라 ★ ×1\nMON-056 크라켄 소환사 ★ ×1', '8~10턴', '420G', 'T3 35% / T4 40% / T5 25%', '대규모 상점'),
+  mkWave('스테이지 보스전 (히로인 3차 각성)', 'MON-064 보스 모드 (용의 둥지 변형 페이즈)', '26~32턴(총)', '750G(보상)', '— (보상 없음, 클리어 보상)')
+];
+
+// 스테이지 04: "신화의 종언 & 강대종 결전" — 신화/고대(E) + 강대(H) 그룹 중심, 최종 스테이지.
+const STAGE4_WAVES = [
+  mkWave('신화 입문: 석화+방무', 'MON-034 고르곤 ×1\nMON-036 미노타우로스 ×1', '6~8턴', '70G', 'T3 45% / T4 40% / T5 15%'),
+  mkWave('거인+맹독 조합', 'MON-057 사이클롭스 ×1\nMON-059 스파이더 걸 ×1', '6~8턴', '160G', 'T3 45% / T4 40% / T5 15%', '첫 상점'),
+  mkWave('석화 단일 정예', 'MON-033 메두사 ★ ×1', '7~9턴', '90G', 'T3 40% / T4 42% / T5 18%'),
+  mkWave('저주+재생 압박', 'MON-038 아누비스 ★ ×1\nMON-034 고르곤 ×1', '7~9턴', '130G', 'T3 40% / T4 42% / T5 18%'),
+  mkWave('봉인+맹독 군단', 'MON-058 거미 여왕 ★ ×1\nMON-059 스파이더 걸 ×1', '7~9턴', '260G', 'T3 35% / T4 40% / T5 25%', '두 번째 상점'),
+  mkWave('삼중 특성 복합 정예', 'MON-035 키메라 ★ ×1\nMON-057 사이클롭스 ×1', '8~10턴', '150G', 'T3 35% / T4 40% / T5 25%'),
+  mkWave('저주+관통+방무 최종급 단일', 'MON-039 세트 ★ ×1', '8~10턴', '210G', 'T4 45% / T5 55%'),
+  mkWave('이중 강대종', 'MON-060 전갈 여왕 ★ ×1\nMON-061 벌레 여왕 ★ ×1', '8~11턴', '380G', 'T4 45% / T5 55%', '대규모 상점'),
+  mkWave('최종 신화+강대 DPS 체크', 'MON-040 스핑크스 ★ ×1\nMON-062 데몬 프린세스 ★ ×1', '9~12턴', '480G', 'T4 35% / T5 65%'),
+  mkWave('최종 보스전 (히로인 최종 각성)', 'MON-064 보스 모드 (최종 3페이즈)', '28~34턴(총)', '900G(보상)', '— (보상 없음, 최종 클리어 보상)', '15禁 연출')
+];
+
+const STAGE_DEFAULT_WAVES = [STAGE1_WAVES, STAGE2_WAVES, STAGE3_WAVES, STAGE4_WAVES];
 
 function defaultStageDesign() {
   const d = {};
   for (let n = 1; n <= STAGE_COUNT; n++) {
+    const preset = STAGE_DEFAULT_WAVES[n - 1];
     d['stage' + n] = {
       name: '스테이지 ' + String(n).padStart(2, '0'),
-      waves: n === 1 ? getRealWaveSheetAsWaves() : Array.from({ length: WAVE_COUNT }, emptyWave)
+      waves: preset ? preset.map(w => Object.assign({}, w)) : Array.from({ length: WAVE_COUNT }, emptyWave)
     };
   }
   return d;
@@ -1382,14 +1448,52 @@ function saveStageDesignDebounced() {
   stageSaveDebounceTimer = setTimeout(saveStageDesign, 400);
 }
 
-function stageIsEmpty(stage) {
-  return stage.waves.every(w => !w.theme && !w.monsters && !w.turns && !w.gold && !w.drop && !w.note);
-}
-
 // textarea가 내용에 맞춰 자동으로 늘어나도록 하여 셀 내부 스크롤이 생기지 않게 함.
 function autoGrowTextarea(el) {
   el.style.height = 'auto';
   el.style.height = (el.scrollHeight + 2) + 'px';
+}
+
+// 드롭 테이블에 적힌 T1~T5 표기를 뱃지로 바꾸고, 호버하면 DB > 아이템 > "기본 아이템" 시트에서
+// 해당 티어에 해당하는 실제 보상 아이템 목록을 툴팁으로 보여준다.
+function getBasicItemsByTier(tier) {
+  const rows = (((DATA['아이템'] || {})['기본 아이템']) || {}).rows || [];
+  return rows.filter(r => cell(r['티어']) === tier);
+}
+
+function buildDropBadges(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'drop-badges';
+  const tiers = Array.from(new Set((text || '').match(/T[1-5]/g) || []));
+  tiers.forEach(tier => {
+    const items = getBasicItemsByTier(tier);
+    const badge = document.createElement('span');
+    badge.className = 'tier-badge';
+    badge.tabIndex = 0;
+    badge.textContent = tier;
+
+    const tip = document.createElement('div');
+    tip.className = 'tier-tip';
+    const h = document.createElement('div');
+    h.className = 'tier-tip-h';
+    h.textContent = tier + ' 보상 아이템 (' + items.length + '개)';
+    tip.appendChild(h);
+    items.slice(0, 6).forEach(it => {
+      const line = document.createElement('div');
+      line.className = 'tier-tip-item';
+      line.textContent = cell(it['이름']) + ' (' + cell(it['슬롯']) + ')';
+      tip.appendChild(line);
+    });
+    if (items.length > 6) {
+      const more = document.createElement('div');
+      more.className = 'tier-tip-more';
+      more.textContent = '+ ' + (items.length - 6) + '개 더 · DB > 아이템 탭 참고';
+      tip.appendChild(more);
+    }
+    badge.appendChild(tip);
+    wrap.appendChild(badge);
+  });
+  return wrap;
 }
 
 function renderStageTabs() {
@@ -1415,18 +1519,6 @@ function renderStageHead() {
   const stage = STAGE_DESIGN[currentStageKey];
   const nameInput = document.getElementById('stageNameInput');
   if (nameInput) nameInput.value = stage.name;
-  const copySel = document.getElementById('stageCopySource');
-  if (copySel) {
-    copySel.innerHTML = '';
-    for (let n = 1; n <= STAGE_COUNT; n++) {
-      const key = 'stage' + n;
-      if (key === currentStageKey) continue;
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = STAGE_DESIGN[key].name;
-      copySel.appendChild(opt);
-    }
-  }
 }
 
 function renderWaveTable() {
@@ -1464,12 +1556,26 @@ function renderWaveTable() {
       if (col.multiline) input.rows = 1;
       input.value = wave[col.key] || '';
       input.placeholder = col.placeholder || '';
-      input.addEventListener('input', () => {
-        wave[col.key] = input.value;
-        saveStageDesignDebounced();
-        if (col.multiline) autoGrowTextarea(input);
-      });
       td.appendChild(input);
+
+      if (col.key === 'drop') {
+        let badges = buildDropBadges(input.value);
+        td.appendChild(badges);
+        input.addEventListener('input', () => {
+          wave[col.key] = input.value;
+          saveStageDesignDebounced();
+          const next = buildDropBadges(input.value);
+          td.replaceChild(next, badges);
+          badges = next;
+        });
+      } else {
+        input.addEventListener('input', () => {
+          wave[col.key] = input.value;
+          saveStageDesignDebounced();
+          if (col.multiline) autoGrowTextarea(input);
+        });
+      }
+
       tr.appendChild(td);
       if (col.multiline) requestAnimationFrame(() => autoGrowTextarea(input));
     });
@@ -1483,28 +1589,6 @@ function renderWaveTable() {
 function renderStagePage() {
   renderStageTabs();
   renderStageHead();
-  renderWaveTable();
-}
-
-function copyFromStage(sourceKey) {
-  const src = STAGE_DESIGN[sourceKey];
-  const dst = STAGE_DESIGN[currentStageKey];
-  if (!src || !dst) return;
-  if (!stageIsEmpty(dst)) {
-    const ok = confirm('"' + dst.name + '"에 이미 입력된 내용이 있습니다. "' + src.name + '"의 내용으로 덮어쓰시겠습니까?');
-    if (!ok) return;
-  }
-  dst.waves = src.waves.map(w => Object.assign({}, w));
-  saveStageDesign();
-  renderWaveTable();
-}
-
-function clearCurrentStage() {
-  const stage = STAGE_DESIGN[currentStageKey];
-  const ok = confirm('"' + stage.name + '"의 모든 웨이브 내용을 초기화합니다. 계속하시겠습니까?');
-  if (!ok) return;
-  stage.waves = Array.from({ length: WAVE_COUNT }, emptyWave);
-  saveStageDesign();
   renderWaveTable();
 }
 
@@ -1545,13 +1629,6 @@ function importStageDesignFile(file) {
     saveStageDesignDebounced();
     renderStageTabs();
   });
-  const copyBtn = document.getElementById('stageCopyBtn');
-  const copySel = document.getElementById('stageCopySource');
-  if (copyBtn && copySel) copyBtn.addEventListener('click', () => {
-    if (copySel.value) copyFromStage(copySel.value);
-  });
-  const clearBtn = document.getElementById('stageClearBtn');
-  if (clearBtn) clearBtn.addEventListener('click', clearCurrentStage);
   const exportBtn = document.getElementById('stageExportBtn');
   if (exportBtn) exportBtn.addEventListener('click', exportStageDesign);
   const importBtn = document.getElementById('stageImportBtn');
