@@ -436,6 +436,19 @@
   }
   .stage-head .spacer { flex:1; }
   .stage-save-status { color:var(--accent2); font-size:12px; min-width:110px; text-align:right; }
+  .stage-type-note { margin-top:10px; font-size:12px; color:var(--muted); line-height:1.6; }
+  .stage-type-note strong { color:var(--text); }
+  .stage-type-desc {
+    display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap; margin:10px 0 4px;
+    padding:14px 16px; border:1px solid var(--border); border-radius:12px; background:var(--panel);
+  }
+  .stage-type-desc-title { font-weight:700; font-size:15px; white-space:nowrap; }
+  .stage-type-desc-groups { display:block; margin-top:2px; font-size:12px; font-weight:400; color:var(--muted); }
+  .stage-type-desc-body { flex:1; min-width:220px; font-size:13px; line-height:1.7; color:var(--text); }
+  .stage-type-desc-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .stage-type-desc-tag {
+    font-size:11px; padding:3px 9px; border-radius:999px; background:#243247; color:#93c5fd; white-space:nowrap;
+  }
   .wave-table { border-collapse:collapse; width:100%; min-width:960px; font-size:13px; table-layout:auto; }
   .wave-table th {
     position:sticky; top:0; background:#243247; text-align:left; padding:12px 10px;
@@ -964,6 +977,9 @@
     <main id="page-stage" class="wrap" hidden>
       <div class="tabs" id="stageTabs"></div>
 
+      <div class="stage-type-note">타입 1~4는 <strong>난이도 차이가 아니라 속성/전투 스타일 차이</strong>입니다. 각 타입 모두 Wave 1~40, 10웨이브마다 히로인 보스가 등장합니다.</div>
+      <div class="stage-type-desc" id="stageTypeDesc"></div>
+
       <div class="table-wrap" id="waveTableWrap" style="max-height:none; margin-top:14px;"></div>
 
       <div class="modal-overlay" id="tierModalOverlay" hidden>
@@ -975,7 +991,7 @@
 
       <div class="toolbar">
         <button type="button" class="btn secondary" id="stageExportBtn">전체 스테이지 내보내기(JSON)</button>
-        <span class="count">스테이지 타입 1~4는 서로 다른 속성/테마의 초안입니다 (타입 간 난이도 차이 없음, 밸런스 확정치 아님, 참고용) · 각 타입은 Wave 1~40, 10웨이브마다 히로인 보스 · 이 표는 읽기 전용이며 클릭해서 수정할 수 없습니다.</span>
+        <span class="count">밸런스 확정치 아님, 참고용 초안입니다 · 이 표는 읽기 전용이며 클릭해서 수정할 수 없습니다.</span>
       </div>
     </main>
 
@@ -1953,6 +1969,41 @@ function buildWavePowerText(text) {
   return terms.join(' + ') + ' = ' + total;
 }
 
+const STAGE_TYPE_DESC = {
+  stage1: {
+    name: '질서와 그림자', groups: '기초 + 언데드 계열',
+    body: '표준적인 물리 전투에 언데드 계열의 저주·공포·흡혈이 뒤섞이는 정석형 스타일입니다. 방어무시+광폭화 조합이 몰리는 구간의 순간 화력에 주의하세요.',
+    tags: ['방어무시', '광폭화', '흡혈', '공포', '소환']
+  },
+  stage2: {
+    name: '매혹의 요마숲', groups: '자연/요정 + 악마 계열',
+    body: '매혹·저주·봉인 위주의 상태이상(CC) 싸움입니다. 순수 물리 딜보다 디버프 해제·면역 대응력이 승패를 가릅니다.',
+    tags: ['저주', '봉인', 'AP흡수', '소환', '재생']
+  },
+  stage3: {
+    name: '환영의 폭풍', groups: '트릭/드래곤 + 원소 계열',
+    body: '분열·소환으로 물량을 불리고 마비·보호막으로 턴을 버티는 환영·원소 스타일입니다. 광역 처리력과 턴 관리가 중요합니다.',
+    tags: ['분열', '마비', '보호막', '광폭화', '소환']
+  },
+  stage4: {
+    name: '신화의 종언', groups: '신화/고대 + 강대 계열',
+    body: '마비·방어무시·물리면역 등 묵직한 광역 디버프가 겹치는 신화급 스타일입니다. 소수의 강적이 전투 전체를 좌우합니다.',
+    tags: ['마비', '방어무시', '물리면역', '저주', '소환']
+  }
+};
+
+function renderStageTypeDesc() {
+  const host = document.getElementById('stageTypeDesc');
+  if (!host) return;
+  const info = STAGE_TYPE_DESC[currentStageKey];
+  if (!info) { host.innerHTML = ''; return; }
+  host.innerHTML =
+    '<div class="stage-type-desc-title">' + info.name + '<span class="stage-type-desc-groups">' + info.groups + '</span></div>' +
+    '<div class="stage-type-desc-body">' + info.body +
+    '<div class="stage-type-desc-tags">' + info.tags.map(t => '<span class="stage-type-desc-tag">' + t + '</span>').join('') + '</div>' +
+    '</div>';
+}
+
 function renderStageTabs() {
   const wrap = document.getElementById('stageTabs');
   if (!wrap) return;
@@ -2033,6 +2084,7 @@ function renderWaveTable() {
 
 function renderStagePage() {
   renderStageTabs();
+  renderStageTypeDesc();
   renderWaveTable();
 }
 
@@ -2286,7 +2338,7 @@ function renderPowerPage() {
 
 const PAGE_META = {
   layout: { title: '레이아웃', sub: '타이틀 · 캐릭터 · 스테이지 · 대화 · 옵션 · 인게임 — 흑백 와이어프레임' },
-  stage: { title: '스테이지', sub: '스테이지 타입 1~4 — 타입별 Wave 1~40 배치표, 10웨이브마다 히로인 보스 (테이블 편집)' },
+  stage: { title: '스테이지', sub: '' },
   power: { title: '파워 지수', sub: '몬스터 스탯 · 특성을 하나의 숫자로 환산 — 스테이지 난이도 설계 기준(v1 초안)' },
   art: { title: '아트 리소스', sub: '' },
   data: { title: 'DB', sub: '몬스터 · 아이템(기본/재료/세트/조합) — HTML 파일만 공유해도 열람 가능 · 장비 크기 당분간 1×1' }
