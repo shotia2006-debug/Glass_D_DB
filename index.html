@@ -455,6 +455,8 @@
   .wave-table td.col-turns, .wave-table td.col-gold { width:84px; min-width:84px; }
   .wave-table td.col-turns input, .wave-table td.col-gold input { text-align:center; white-space:nowrap; }
   .wave-table td.col-drop { min-width:200px; }
+  .wave-table td.col-power { width:110px; min-width:110px; }
+  .wave-table td.col-power .cell-text { text-align:center; font-weight:700; color:#93c5fd; white-space:nowrap; }
 
   /* 드롭 테이블 티어 배지 + 호버 툴팁(이미지 포함) + 클릭 팝업 */
   .drop-badges { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
@@ -478,16 +480,22 @@
   .tier-tip .tier-tip-item img { width:16px; height:16px; object-fit:contain; border-radius:3px; background:#000; flex:0 0 16px; }
   .tier-tip .tier-tip-more { font-size:10.5px; color:#64748b; margin-top:4px; }
 
-  /* 적 구성 몬스터 칩(이미지 + 호버 능력치 툴팁) */
-  .mon-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+  /* 적 구성 몬스터 칩(이미지 아이콘 + 마리수 뱃지 + 호버 능력치 툴팁) */
+  .mon-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
   .mon-chip {
-    position:relative; display:inline-flex; align-items:center; gap:4px; padding:2px 8px 2px 3px;
-    border-radius:999px; background:#0b1220; border:1px solid var(--border); font-size:10.5px;
-    color:#e2e8f0; cursor:default;
+    position:relative; display:inline-flex; align-items:center; padding:2px;
+    border-radius:8px; background:#0b1220; border:1px solid var(--border); cursor:default;
   }
-  .mon-chip:hover, .mon-chip:focus-within { border-color:var(--accent); color:#fff; }
-  .mon-chip img { width:18px; height:18px; object-fit:contain; border-radius:5px; background:#000; flex:0 0 18px; }
+  .mon-chip:hover, .mon-chip:focus-within { border-color:var(--accent); }
+  .mon-chip-img-wrap { position:relative; display:inline-block; width:24px; height:24px; }
+  .mon-chip-img-wrap img { width:24px; height:24px; object-fit:contain; border-radius:5px; background:#000; display:block; }
+  .mon-chip-qty {
+    position:absolute; right:-4px; bottom:-4px; min-width:15px; text-align:center;
+    background:#0b1220; border:1px solid var(--accent); border-radius:999px; font-size:9.5px;
+    font-weight:800; color:#fff; padding:0 3px; line-height:1.4;
+  }
   .mon-chip .tier-tip { width:200px; }
+  .mon-chip:hover .tier-tip, .mon-chip:focus-within .tier-tip { display:block; }
 
   /* 화면 중앙 큰 리스트 팝업 (드롭 테이블 티어 클릭 시) */
   .modal-overlay {
@@ -1501,6 +1509,7 @@ const WAVE_COLS = [
   { key: 'turns', label: '목표 처리턴', className: 'col-turns', placeholder: '예: 4~6턴' },
   { key: 'gold', label: '골드 보상', className: 'col-gold', placeholder: '예: 30G' },
   { key: 'drop', label: '드롭 테이블', className: 'col-drop', placeholder: '예: T1 70% / T2 25% / T3 5%' },
+  { key: 'power', label: '파워 지수', className: 'col-power', compute: (wave) => buildWavePowerText(wave.monsters) },
   { key: 'note', label: '비고', placeholder: '예: 첫 상점' }
 ];
 
@@ -1740,15 +1749,22 @@ function buildMonsterChips(text) {
     chip.className = 'mon-chip';
     chip.tabIndex = 0;
 
+    const imgWrap = document.createElement('span');
+    imgWrap.className = 'mon-chip-img-wrap';
     const src = monThumb(entry.id);
     if (src) {
       const img = document.createElement('img');
       img.src = src;
-      chip.appendChild(img);
+      img.alt = mon ? cell(mon['한글명']) : entry.id;
+      imgWrap.appendChild(img);
     }
-    const label = document.createElement('span');
-    label.textContent = (mon ? cell(mon['한글명']) : entry.id) + (entry.qty > 1 ? ' ×' + entry.qty : '');
-    chip.appendChild(label);
+    if (entry.qty > 1) {
+      const qty = document.createElement('span');
+      qty.className = 'mon-chip-qty';
+      qty.textContent = '×' + entry.qty;
+      imgWrap.appendChild(qty);
+    }
+    chip.appendChild(imgWrap);
 
     const tip = document.createElement('div');
     tip.className = 'tier-tip';
@@ -1779,6 +1795,25 @@ function buildMonsterChips(text) {
     wrap.appendChild(chip);
   });
   return wrap;
+}
+
+// 적 구성 텍스트를 파싱해 "몬스터별 파워 지수 + ... = 총합" 형태의 문자열로 만든다.
+// (파워 지수 계산식 자체는 아래 "몬스터 파워 지수" 섹션의 computePowerScore를 그대로 사용)
+function buildWavePowerText(text) {
+  const entries = parseMonsterEntries(text);
+  const terms = [];
+  let total = 0;
+  entries.forEach(entry => {
+    const mon = findMonster(entry.id);
+    const score = mon ? computePowerScore(mon) : null;
+    if (!score) return;
+    const val = Math.round(score.total) * (entry.qty || 1);
+    terms.push(val);
+    total += val;
+  });
+  if (!terms.length) return '';
+  if (terms.length === 1) return String(terms[0]);
+  return terms.join(' + ') + ' = ' + total;
 }
 
 function renderStageTabs() {
@@ -1838,13 +1873,16 @@ function renderWaveTable() {
     WAVE_COLS.forEach(col => {
       const td = document.createElement('td');
       if (col.className) td.className = col.className;
-      const value = wave[col.key] || '';
-      td.appendChild(buildCellText(value));
+      const value = col.compute ? col.compute(wave) : (wave[col.key] || '');
 
-      if (col.key === 'drop') {
-        td.appendChild(buildDropBadges(value));
-      } else if (col.key === 'monsters') {
+      if (col.key === 'monsters') {
+        // 몬스터 이미지 칩으로 충분히 표시되므로 원본 텍스트는 노출하지 않는다.
         td.appendChild(buildMonsterChips(value));
+      } else if (col.key === 'drop') {
+        td.appendChild(buildCellText(value));
+        td.appendChild(buildDropBadges(value));
+      } else {
+        td.appendChild(buildCellText(value));
       }
 
       tr.appendChild(td);
