@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>DB</title>
+<title>Glass_D Design Console</title>
 <style>
   :root {
     --bg:#0f172a; --panel:#1e293b; --border:#334155; --text:#e2e8f0; --muted:#94a3b8;
@@ -620,29 +620,82 @@
     display:inline-block; width:8px; height:8px; border-radius:50%; background:#f87171; vertical-align:middle;
   }
   .power-table tr.mismatch-row td.power-total { color:#f87171; }
+
+  /* Design Console v2 */
+  .nav-group-label { margin:14px 10px 4px; color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+  .nav-group-label:first-child { margin-top:2px; }
+  .dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:16px; }
+  .metric-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .metric-label { color:var(--muted); font-size:11px; font-weight:700; }
+  .metric-value { margin-top:6px; font-size:26px; font-weight:900; }
+  .metric-sub { margin-top:4px; color:var(--muted); font-size:11px; }
+  .health-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .health-chip { border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:11px; }
+  .health-chip.error { border-color:#ef4444; color:#fca5a5; }
+  .health-chip.warning { border-color:#f59e0b; color:#fcd34d; }
+  .health-chip.ok { border-color:#22c55e; color:#86efac; }
+  .validation-summary { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .validation-table td:first-child { width:84px; font-weight:800; }
+  .validation-sev-error { color:#f87171; }
+  .validation-sev-warning { color:#fbbf24; }
+  .validation-sev-info { color:#60a5fa; }
+  .art-actions { display:flex; gap:6px; margin-left:auto; }
+  .art-status-btn { min-width:72px; border:1px solid var(--border); background:#0f172a; color:var(--text); border-radius:7px; padding:6px 8px; cursor:pointer; font-size:10px; font-weight:800; }
+  .art-status-btn.status-WIP { border-color:#3b82f6; color:#93c5fd; }
+  .art-status-btn.status-REVIEW { border-color:#f59e0b; color:#fcd34d; }
+  .art-status-btn.status-DONE { border-color:#22c55e; color:#86efac; }
+  .art-table tr.status-DONE { opacity:.62; }
+  .delta-pos { color:#f87171; font-weight:800; }
+  .delta-neg { color:#60a5fa; font-weight:800; }
+  .delta-zero { color:var(--muted); }
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="sidebar">
-    <div class="brand">Glass_D</div>
+    <div class="brand">Glass_D <span style="color:var(--muted);font-size:10px;">Design Console</span></div>
     <nav class="nav">
+      <div class="nav-group-label">Overview</div>
+      <button type="button" data-page="dashboard" class="active">Dashboard</button>
+      <div class="nav-group-label">Design</div>
       <button type="button" data-page="layout">레이아웃</button>
-      <button type="button" data-page="art">아트 리소스</button>
-      <button type="button" data-page="power">파워 지수</button>
       <button type="button" data-page="stage">스테이지</button>
-      <button type="button" data-page="data" class="active">DB</button>
+      <button type="button" data-page="power">파워 지수</button>
+      <div class="nav-group-label">Content</div>
+      <button type="button" data-page="data">DB</button>
+      <button type="button" data-page="art">아트 리소스</button>
+      <div class="nav-group-label">Tools</div>
+      <button type="button" data-page="validation">Validation</button>
     </nav>
   </aside>
   <div class="content">
     <header>
       <div class="wrap">
-        <h1 id="pageTitle">DB</h1>
-        <div class="sub" id="pageSub">몬스터 · 아이템(기본/재료/세트/조합) — HTML 파일만 공유해도 열람 가능 · 장비 크기 전부 1×1</div>
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="sub" id="pageSub">Glass_D Design Console — 데이터 · 밸런스 · 스테이지 · 아트 상태를 한눈에 확인</div>
         <div class="tabs" id="mainTabs"></div>
       </div>
     </header>
-    <main id="page-data" class="wrap">
+    <main id="page-dashboard" class="wrap">
+      <div class="dashboard-grid" id="dashboardMetrics"></div>
+      <div class="doc-card">
+        <div class="stage-head" style="margin:0">
+          <div>
+            <h3 style="margin:0">DATA HEALTH</h3>
+            <p class="doc-note" style="margin:5px 0 0">DB 참조 무결성, 아트 진행, 파워 밸런스 경고를 자동 집계합니다.</p>
+          </div>
+          <div class="spacer"></div>
+          <button type="button" class="btn secondary" onclick="showPage('validation')">Validation 열기</button>
+        </div>
+        <div class="health-row" id="dashboardHealth"></div>
+      </div>
+      <div class="doc-card">
+        <h3>Design Console v2</h3>
+        <p class="doc-note">Monster DB → Power Score → Wave Composition → Stage Difficulty를 같은 데이터에서 계산합니다. 배포 형태는 기존처럼 단일 HTML을 유지합니다.</p>
+      </div>
+    </main>
+
+    <main id="page-data" class="wrap" hidden>
       <div class="tabs" id="subTabs"></div>
       <div class="toolbar">
         <input id="q" type="search" placeholder="검색 (ID, 이름, 특성…)" />
@@ -669,12 +722,17 @@
           <div class="art-prog-value" id="artProgressText">체크 0 / 전체 0</div>
         </div>
         <div class="art-prog-bar" aria-hidden="true"><div class="art-prog-fill" id="artProgressFill"></div></div>
-        <button type="button" class="btn secondary" id="artResetBtn">체크 초기화</button>
+        <div class="art-actions">
+          <button type="button" class="btn secondary" id="artExportBtn">상태 내보내기</button>
+          <button type="button" class="btn secondary" id="artImportBtn">상태 가져오기</button>
+          <input type="file" id="artImportFile" accept="application/json,.json" hidden />
+          <button type="button" class="btn secondary" id="artResetBtn">상태 초기화</button>
+        </div>
       </div>
       <div class="tabs" id="artTabs"></div>
       <div id="artRoot"></div>
       <footer>
-        체크 상태는 이 브라우저의 localStorage(<code>glass_d_art_checks</code>)에 저장됩니다. 새로고침 후에도 유지됩니다.<br/>
+        상태는 TODO → WIP → REVIEW → DONE 순환 방식이며 localStorage(<code>glass_d_art_checks</code>)에 저장됩니다. JSON으로 공유할 수 있습니다.<br/>
         몬스터/아이템 목록은 데이터 테이블 DATA에서 자동 생성됩니다.
       </footer>
     </main>
@@ -729,7 +787,7 @@
 
       <div class="doc-card">
         <h3>계산식 &amp; 난이도 등급</h3>
-        <div class="formula-box">파워 지수 = (HP × 1) + (ATK × 10) + (DEF × 20) + Σ(보유 특성 점수)</div>
+        <div class="formula-box">Power v2 = [(HP × 1) + (ATK × 10) + (DEF × 20) + Σ(특성 점수)] × 특성 시너지</div>
         <table class="coef-table">
           <thead><tr><th>등급</th><th>파워 지수 구간</th><th>설명</th></tr></thead>
           <tbody id="tierBandRoot"></tbody>
@@ -756,8 +814,8 @@
         <h3>제외 대상 &amp; 다음 단계</h3>
         <ul class="doc-list">
           <li><strong>MON-064 보스 모드</strong>는 고정 스탯이 없어(별도 기획서 SPEC_HeroineBoss.md 기준 3페이즈 구성) 이 표에서 제외했습니다. 보스는 별도 산정이 필요합니다.</li>
-          <li>이 페이지는 v1 초안입니다. 계수·특성 점수는 언제든 조정 가능하니 이상하다 싶은 값이 있으면 말씀해주세요.</li>
-          <li>다음 단계: 이 파워 지수를 "스테이지 &gt; 웨이브별 총 파워 예산"에 연결해 난이도 곡선을 재검증하는 작업은 별도로 진행합니다 (이번 작업 범위 아님).</li>
+          <li>이 페이지는 v2 기준선입니다. 단일 몬스터는 특성 시너지를, 웨이브는 Action Economy(AE)와 조합 시너지를 추가 반영합니다.</li>
+          <li>스테이지의 파워 지수 열은 v2 점수와 Action Economy(AE), 웨이브 조합 시너지(SYN)를 자동 반영합니다.</li>
         </ul>
       </div>
     </main>
@@ -1036,6 +1094,21 @@
       <div class="toolbar">
         <button type="button" class="btn secondary" id="stageExportBtn">전체 스테이지 내보내기(JSON)</button>
         <span class="count">밸런스 확정치 아님, 참고용 초안입니다 · 이 표는 읽기 전용이며 클릭해서 수정할 수 없습니다.</span>
+      </div>
+    </main>
+
+    <main id="page-validation" class="wrap" hidden>
+      <div class="doc-card">
+        <div class="stage-head" style="margin:0 0 12px;">
+          <div>
+            <h3 style="margin:0">Data Validation</h3>
+            <p class="doc-note" style="margin:5px 0 0">ID · 참조 · 스프라이트 · 특성 · 웨이브 규칙 · 드롭 합계를 자동 검사합니다.</p>
+          </div>
+          <div class="spacer"></div>
+          <button type="button" class="btn secondary" id="validationRefreshBtn">다시 검사</button>
+        </div>
+        <div class="validation-summary" id="validationSummary"></div>
+        <div class="table-wrap" style="max-height:none" id="validationTableWrap"></div>
       </div>
     </main>
 
@@ -1393,12 +1466,20 @@ const ART_STATIC_ITEMS = [
   { id: 'common_option_btn', cat: '공용', list: '옵션 버튼 (Normal/Hover/Focus/Disabled)' },
 ];
 
+const ART_STATUS_ORDER = ['TODO', 'WIP', 'REVIEW', 'DONE'];
+function normalizeArtStatus(v) {
+  if (v === true) return 'DONE';
+  if (ART_STATUS_ORDER.includes(v)) return v;
+  return 'TODO';
+}
 function loadArtChecks() {
   try {
     const raw = localStorage.getItem(ART_STORAGE_KEY);
     if (!raw) return {};
     const obj = JSON.parse(raw);
-    return obj && typeof obj === 'object' ? obj : {};
+    if (!obj || typeof obj !== 'object') return {};
+    Object.keys(obj).forEach(k => { obj[k] = normalizeArtStatus(obj[k]); });
+    return obj;
   } catch (e) {
     return {};
   }
@@ -1470,11 +1551,12 @@ function artCatOrder(items) {
 
 function updateArtProgress(items) {
   const total = items.length;
-  const checked = items.reduce((n, it) => n + (artChecks[it.id] ? 1 : 0), 0);
+  const counts = { TODO:0, WIP:0, REVIEW:0, DONE:0 };
+  items.forEach(it => { counts[normalizeArtStatus(artChecks[it.id])]++; });
   const el = document.getElementById('artProgressText');
-  if (el) el.textContent = '체크 ' + checked + ' / 전체 ' + total;
+  if (el) el.textContent = '완료 ' + counts.DONE + ' / 전체 ' + total + ' · WIP ' + counts.WIP + ' · REVIEW ' + counts.REVIEW;
   const fill = document.getElementById('artProgressFill');
-  if (fill) fill.style.width = (total ? Math.round(checked * 100 / total) : 0) + '%';
+  if (fill) fill.style.width = (total ? Math.round(counts.DONE * 100 / total) : 0) + '%';
 }
 
 function renderArtTabs(order) {
@@ -1500,34 +1582,29 @@ function renderArtTable(items) {
   if (!root) return;
   const rows = items.filter(it => it.cat === artTab);
   const body = rows.map(it => {
-    const on = !!artChecks[it.id];
-    const thumb = it.thumb
-      ? '<img class="art-thumb" src="' + it.thumb + '" alt="" />'
-      : '';
+    const status = normalizeArtStatus(artChecks[it.id]);
+    const thumb = it.thumb ? '<img class="art-thumb" src="' + it.thumb + '" alt="" />' : '';
     const note = it.note ? '<span class="art-note">' + String(it.note).replace(/</g,'&lt;') + '</span>' : '';
-    return '<tr class="' + (on ? 'checked' : '') + '" data-art-id="' + it.id.replace(/"/g,'&quot;') + '">'
+    return '<tr class="status-' + status + '" data-art-id="' + it.id.replace(/"/g,'&quot;') + '">'
       + '<td><div class="art-list">' + thumb
       + '<div class="art-list-text">' + String(it.list).replace(/</g,'&lt;') + note + '</div></div></td>'
-      + '<td class="art-check-cell"><button type="button" class="art-check" aria-pressed="' + (on ? 'true' : 'false') + '" title="체크">'
-      + (on ? '✓' : '') + '</button></td></tr>';
+      + '<td class="art-check-cell"><button type="button" class="art-status-btn status-' + status + '" title="클릭하여 상태 변경">'
+      + status + '</button></td></tr>';
   }).join('');
   root.innerHTML =
     '<div class="art-table-wrap"><table class="art-table"><thead><tr>'
-    + '<th>리스트 <span class="badge">' + rows.length + '</span></th><th style="width:72px">체크</th>'
+    + '<th>리스트 <span class="badge">' + rows.length + '</span></th><th style="width:100px">상태</th>'
     + '</tr></thead><tbody>' + body + '</tbody></table></div>';
   root.querySelectorAll('tr[data-art-id]').forEach(tr => {
     const id = tr.getAttribute('data-art-id');
-    const btn = tr.querySelector('.art-check');
+    const btn = tr.querySelector('.art-status-btn');
     if (!btn) return;
     btn.addEventListener('click', () => {
-      artChecks[id] = !artChecks[id];
-      if (!artChecks[id]) delete artChecks[id];
+      const current = normalizeArtStatus(artChecks[id]);
+      const next = ART_STATUS_ORDER[(ART_STATUS_ORDER.indexOf(current) + 1) % ART_STATUS_ORDER.length];
+      if (next === 'TODO') delete artChecks[id]; else artChecks[id] = next;
       saveArtChecks(artChecks);
-      const on = !!artChecks[id];
-      tr.classList.toggle('checked', on);
-      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      btn.textContent = on ? '✓' : '';
-      updateArtProgress(items);
+      renderArtPage();
     });
   });
 }
@@ -1553,10 +1630,45 @@ function renderArtPage() {
   if (resetBtn && !resetBtn.dataset.bound) {
     resetBtn.dataset.bound = '1';
     resetBtn.addEventListener('click', () => {
-      if (!confirm('아트 체크 상태를 모두 초기화할까요?')) return;
+      if (!confirm('아트 상태를 모두 TODO로 초기화할까요?')) return;
       artChecks = {};
       saveArtChecks(artChecks);
       renderArtPage();
+    });
+  }
+  const exportBtn = document.getElementById('artExportBtn');
+  if (exportBtn && !exportBtn.dataset.bound) {
+    exportBtn.dataset.bound = '1';
+    exportBtn.addEventListener('click', () => {
+      const payload = { version:2, exportedAt:new Date().toISOString(), statuses:artChecks };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'glass_d_art_status.json'; a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  }
+  const importBtn = document.getElementById('artImportBtn');
+  const importFile = document.getElementById('artImportFile');
+  if (importBtn && importFile && !importBtn.dataset.bound) {
+    importBtn.dataset.bound = '1';
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', () => {
+      const file = importFile.files && importFile.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result || '{}'));
+          const incoming = parsed.statuses || parsed;
+          const next = {};
+          Object.keys(incoming || {}).forEach(k => {
+            const s = normalizeArtStatus(incoming[k]);
+            if (s !== 'TODO') next[k] = s;
+          });
+          artChecks = next; saveArtChecks(artChecks); renderArtPage();
+        } catch (e) { alert('올바른 아트 상태 JSON이 아닙니다.'); }
+        importFile.value = '';
+      };
+      reader.readAsText(file);
     });
   }
 }
@@ -1996,21 +2108,39 @@ function buildMonsterList(text) {
 
 // 적 구성 텍스트를 파싱해 "몬스터별 파워 지수 + ... = 총합" 형태의 문자열로 만든다.
 // (파워 지수 계산식 자체는 아래 "몬스터 파워 지수" 섹션의 computePowerScore를 그대로 사용)
-function buildWavePowerText(text) {
+function waveCompositionModifier(allTraits, unitCount) {
+  const set = new Set(allTraits);
+  let m = 1;
+  if (set.has('STUN') && set.has('AP_DRAIN')) m += 0.08;
+  if (set.has('CURSE') && set.has('AP_DRAIN')) m += 0.05;
+  if (set.has('SUMMON') && unitCount >= 3) m += 0.06;
+  if (set.has('FIRST_STRIKE') && unitCount >= 2) m += 0.04;
+  return Math.min(1.20, m);
+}
+function computeWavePower(text) {
   const entries = parseMonsterEntries(text);
-  const terms = [];
-  let total = 0;
+  let base = 0, units = 0;
+  const allTraits = [];
   entries.forEach(entry => {
     const mon = findMonster(entry.id);
     const score = mon ? computePowerScore(mon) : null;
     if (!score) return;
-    const val = Math.round(score.total) * (entry.qty || 1);
-    terms.push(val);
-    total += val;
+    const qty = entry.qty || 1;
+    base += Math.round(score.total) * qty;
+    units += qty;
+    score.traits.forEach(t => allTraits.push(t));
   });
-  if (!terms.length) return '';
-  if (terms.length === 1) return String(terms[0]);
-  return terms.join(' + ') + ' = ' + total;
+  if (!base) return null;
+  const actionMultiplier = 1 + Math.min(0.35, Math.max(0, units - 1) * 0.06);
+  const compositionMultiplier = waveCompositionModifier(allTraits, units);
+  const effective = Math.round(base * actionMultiplier * compositionMultiplier);
+  return { base, units, actionMultiplier, compositionMultiplier, effective };
+}
+function buildWavePowerText(text) {
+  const p = computeWavePower(text);
+  if (!p) return '';
+  if (p.actionMultiplier === 1 && p.compositionMultiplier === 1) return String(p.effective);
+  return p.base + ' × AE ' + p.actionMultiplier.toFixed(2) + ' × SYN ' + p.compositionMultiplier.toFixed(2) + ' = ' + p.effective;
 }
 
 const STAGE_TYPE_DESC = {
@@ -2211,6 +2341,21 @@ const POWER_TIER_BANDS = [
   { grade: 'A', min: 1150, max: Infinity,  desc: '강대/후반 정예 — 스테이지 최상급 위협' }
 ];
 
+const POWER_SYNERGY_RULES = [
+  { traits:['STUN','AP_DRAIN'], mult:1.12, label:'마비+AP흡수' },
+  { traits:['FIRST_STRIKE','STUN'], mult:1.10, label:'선공+마비' },
+  { traits:['BERSERK','LIFESTEAL'], mult:1.10, label:'광폭화+흡혈' },
+  { traits:['SUMMON','REGEN'], mult:1.08, label:'소환+재생' },
+  { traits:['CURSE','AP_DRAIN'], mult:1.08, label:'저주+AP흡수' }
+];
+function traitSynergy(traits) {
+  const set = new Set(traits);
+  let mult = 1; const labels = [];
+  POWER_SYNERGY_RULES.forEach(r => {
+    if (r.traits.every(t => set.has(t))) { mult *= r.mult; labels.push(r.label); }
+  });
+  return { multiplier:Math.min(1.30, mult), labels };
+}
 function computePowerScore(row) {
   const hp = typeof row.HP === 'number' ? row.HP : null;
   const atk = typeof row.ATK === 'number' ? row.ATK : null;
@@ -2218,11 +2363,12 @@ function computePowerScore(row) {
   if (hp === null || atk === null || def === null) return null;
   const traits = [row['특성1'], row['특성2'], row['특성3'], row['특성4']].filter(Boolean);
   let traitPt = 0;
-  traits.forEach(t => {
-    if (TRAIT_POINTS[t] !== undefined) traitPt += TRAIT_POINTS[t];
-  });
-  const statScore = hp * 1 + atk * 10 + def * 20;
-  return { statScore, traitPt, total: statScore + traitPt, traits };
+  traits.forEach(t => { if (TRAIT_POINTS[t] !== undefined) traitPt += TRAIT_POINTS[t]; });
+  const statScore = hp + atk * 10 + def * 20;
+  const baseTotal = statScore + traitPt;
+  const synergy = traitSynergy(traits);
+  const total = Math.round(baseTotal * synergy.multiplier);
+  return { statScore, traitPt, baseTotal, synergyMultiplier:synergy.multiplier, synergyLabels:synergy.labels, total, traits };
 }
 
 function powerGradeOf(total) {
@@ -2275,94 +2421,75 @@ function renderTierBands() {
 }
 
 let POWER_ROWS_CACHE = null;
+const POWER_GRADE_ORDER = ['F','E','D','C','B','A'];
+function gradeDeltaFor(original, calc) {
+  const i = POWER_GRADE_ORDER.indexOf(calc);
+  if (i < 0) return 0;
+  let min=0,max=3;
+  if (original === '정예★' || original === '정예') { min=4; max=5; }
+  if (original === '히로인보스') { min=5; max=5; }
+  if (i < min) return i - min;
+  if (i > max) return i - max;
+  return 0;
+}
 function getPowerRows() {
   if (POWER_ROWS_CACHE) return POWER_ROWS_CACHE;
   const rows = (((DATA['몬스터'] || {})['몬스터 DB']) || {}).rows || [];
   POWER_ROWS_CACHE = rows.map(r => {
     const score = computePowerScore(r);
+    const calcGrade = score ? powerGradeOf(score.total) : null;
     return {
-      id: r['ID'], name: r['한글명'], group: r['그룹'], grade: r['등급'],
-      hp: r.HP, atk: r.ATK, def: r.DEF, traits: score ? score.traits : [],
-      statScore: score ? score.statScore : null, traitPt: score ? score.traitPt : null,
-      total: score ? score.total : null,
-      calcGrade: score ? powerGradeOf(score.total) : null
+      id:r['ID'], name:r['한글명'], group:r['그룹'], grade:r['등급'],
+      hp:r.HP, atk:r.ATK, def:r.DEF, traits:score ? score.traits : [],
+      statScore:score ? score.statScore : null, traitPt:score ? score.traitPt : null,
+      baseTotal:score ? score.baseTotal : null,
+      synergyMultiplier:score ? score.synergyMultiplier : 1,
+      synergyLabels:score ? score.synergyLabels : [],
+      total:score ? score.total : null, calcGrade,
+      gradeDelta:score ? gradeDeltaFor(r['등급'], calcGrade) : 0
     };
   });
   return POWER_ROWS_CACHE;
 }
-
-function isGradeMismatch(row) {
-  if (row.total === null) return false;
-  const origElite = row.grade === '정예★' || row.grade === '히로인보스';
-  const calcElite = row.calcGrade === 'B' || row.calcGrade === 'A';
-  return origElite !== calcElite;
-}
+function isGradeMismatch(row) { return row.total !== null && row.gradeDelta !== 0; }
 
 function renderPowerTable() {
-  const wrap = document.getElementById('powerTableWrap');
-  if (!wrap) return;
-  const groupSel = document.getElementById('powerGroupFilter');
-  const gradeSel = document.getElementById('powerGradeFilter');
-  const searchInput = document.getElementById('powerSearchInput');
-  const rows = getPowerRows();
-
+  const wrap = document.getElementById('powerTableWrap'); if (!wrap) return;
+  const groupSel=document.getElementById('powerGroupFilter'), gradeSel=document.getElementById('powerGradeFilter'), searchInput=document.getElementById('powerSearchInput');
+  const rows=getPowerRows();
   if (groupSel && !groupSel.dataset.filled) {
-    const groups = ['전체'].concat(Array.from(new Set(rows.map(r => r.group).filter(Boolean))).sort());
-    groupSel.innerHTML = groups.map(g => '<option value="' + g + '">' + g + '</option>').join('');
-    groupSel.dataset.filled = '1';
+    const groups=['전체'].concat(Array.from(new Set(rows.map(r=>r.group).filter(Boolean))).sort());
+    groupSel.innerHTML=groups.map(g=>'<option value="'+g+'">'+g+'</option>').join(''); groupSel.dataset.filled='1';
   }
   if (gradeSel && !gradeSel.dataset.filled) {
-    const grades = ['전체'].concat(Array.from(new Set(rows.map(r => r.grade).filter(Boolean))));
-    gradeSel.innerHTML = grades.map(g => '<option value="' + g + '">' + g + '</option>').join('');
-    gradeSel.dataset.filled = '1';
+    const grades=['전체'].concat(Array.from(new Set(rows.map(r=>r.grade).filter(Boolean))));
+    gradeSel.innerHTML=grades.map(g=>'<option value="'+g+'">'+g+'</option>').join(''); gradeSel.dataset.filled='1';
   }
-
-  const groupVal = groupSel ? groupSel.value : '전체';
-  const gradeVal = gradeSel ? gradeSel.value : '전체';
-  const search = (searchInput ? searchInput.value : '').trim().toLowerCase();
-
-  const filtered = rows.filter(r => {
-    if (r.total === null) return false; // 보스 등 산정 제외
-    if (groupVal && groupVal !== '전체' && r.group !== groupVal) return false;
-    if (gradeVal && gradeVal !== '전체' && r.grade !== gradeVal) return false;
-    if (search && !((r.id || '').toLowerCase().indexOf(search) > -1 || (r.name || '').toLowerCase().indexOf(search) > -1)) return false;
-    return true;
-  }).sort((a, b) => b.total - a.total);
-
-  const table = document.createElement('table');
-  table.className = 'power-table';
-  const thead = document.createElement('thead');
-  thead.innerHTML = '<tr>' +
-    ['', 'ID', '이름', '그룹', '기존 등급', 'HP', 'ATK', 'DEF', '특성', '스탯점수', '특성점수', '총점', '산출 등급']
-      .map(h => '<th>' + h + '</th>').join('') + '</tr>';
-  table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
-  filtered.forEach(r => {
-    const tr = document.createElement('tr');
-    if (isGradeMismatch(r)) tr.className = 'mismatch-row';
-    const src = monThumb(r.id);
-    const gradeShort = (r.grade || '').replace('★', '');
-    tr.innerHTML =
-      '<td>' + (src ? '<img class="power-thumb" src="' + src + '" />' : '') + '</td>' +
-      '<td>' + r.id + '</td>' +
-      '<td class="power-name">' + r.name + '</td>' +
-      '<td>' + (r.group || '') + '</td>' +
-      '<td><span class="grade-badge grade-' + gradeShort + '">' + (r.grade || '') + '</span></td>' +
-      '<td>' + r.hp + '</td>' +
-      '<td>' + r.atk + '</td>' +
-      '<td>' + r.def + '</td>' +
-      '<td>' + r.traits.join(', ') + '</td>' +
-      '<td>' + r.statScore + '</td>' +
-      '<td>' + r.traitPt + '</td>' +
-      '<td class="power-total">' + r.total + (isGradeMismatch(r) ? ' <span class="mismatch-dot" title="기존 등급과 산출 등급 불일치"></span>' : '') + '</td>' +
-      '<td><span class="grade-badge grade-' + r.calcGrade + '">' + r.calcGrade + '</span></td>';
+  const groupVal=groupSel?groupSel.value:'전체', gradeVal=gradeSel?gradeSel.value:'전체';
+  const search=(searchInput?searchInput.value:'').trim().toLowerCase();
+  const filtered=rows.filter(r=>r.total!==null)
+    .filter(r=>groupVal==='전체'||r.group===groupVal)
+    .filter(r=>gradeVal==='전체'||r.grade===gradeVal)
+    .filter(r=>!search||((r.id||'').toLowerCase().includes(search)||(r.name||'').toLowerCase().includes(search)))
+    .sort((a,b)=>b.total-a.total);
+  const table=document.createElement('table'); table.className='power-table';
+  table.innerHTML='<thead><tr>'+['','ID','이름','그룹','기존 등급','HP','ATK','DEF','특성','Base','Synergy','v2 총점','산출 등급','Δ'].map(h=>'<th>'+h+'</th>').join('')+'</tr></thead>';
+  const tbody=document.createElement('tbody');
+  filtered.forEach(r=>{
+    const tr=document.createElement('tr'); if(isGradeMismatch(r)) tr.className='mismatch-row';
+    const src=monThumb(r.id), gradeShort=(r.grade||'').replace('★','');
+    const d=r.gradeDelta, dc=d>0?'delta-pos':d<0?'delta-neg':'delta-zero';
+    tr.innerHTML='<td>'+(src?'<img class="power-thumb" src="'+src+'" />':'')+'</td>'
+      +'<td>'+r.id+'</td><td class="power-name">'+r.name+'</td><td>'+(r.group||'')+'</td>'
+      +'<td><span class="grade-badge grade-'+gradeShort+'">'+(r.grade||'')+'</span></td>'
+      +'<td>'+r.hp+'</td><td>'+r.atk+'</td><td>'+r.def+'</td><td>'+r.traits.join(', ')+'</td>'
+      +'<td>'+r.baseTotal+'</td><td title="'+r.synergyLabels.join(', ')+'">×'+r.synergyMultiplier.toFixed(2)+'</td>'
+      +'<td class="power-total">'+r.total+(isGradeMismatch(r)?' <span class="mismatch-dot" title="설정 등급 권장 범위와 차이"></span>':'')+'</td>'
+      +'<td><span class="grade-badge grade-'+r.calcGrade+'">'+r.calcGrade+'</span></td>'
+      +'<td class="'+dc+'">'+(d>0?'+':'')+d+'</td>';
     tbody.appendChild(tr);
   });
-  table.appendChild(tbody);
-
-  wrap.innerHTML = '';
-  wrap.appendChild(table);
+  table.appendChild(tbody); wrap.innerHTML=''; wrap.appendChild(table);
 }
 
 function renderPowerPage() {
@@ -2380,12 +2507,89 @@ function renderPowerPage() {
   if (searchInput) searchInput.addEventListener('input', renderPowerTable);
 })();
 
+function collectItemRows() {
+  const pack=DATA['아이템']||{}, rows=[];
+  Object.keys(pack).forEach(sheet=>((pack[sheet]&&pack[sheet].rows)||[]).forEach(r=>rows.push({sheet,row:r})));
+  return rows;
+}
+function getValidationIssues() {
+  const issues=[];
+  const push=(severity,code,message)=>issues.push({severity,code,message});
+  const mons=(((DATA['몬스터']||{})['몬스터 DB']||{}).rows)||[];
+  const monIds=new Map();
+  mons.forEach(r=>{
+    const id=cell(r['ID']); if(!id) return;
+    monIds.set(id,(monIds.get(id)||0)+1);
+    if(typeof r.HP!=='number'||typeof r.ATK!=='number'||typeof r.DEF!=='number') push('error','MON_STAT',id+' 스탯(HP/ATK/DEF) 누락');
+    [r['특성1'],r['특성2'],r['특성3'],r['특성4']].filter(Boolean).forEach(t=>{ if(TRAIT_POINTS[t]===undefined) push('warning','TRAIT_UNKNOWN',id+' 알 수 없는 특성: '+t); });
+    if(typeof SPRITES!=='undefined' && !SPRITES[id]) push('warning','MON_SPRITE',id+' 몬스터 스프라이트 없음');
+  });
+  monIds.forEach((n,id)=>{ if(n>1) push('error','MON_DUP',id+' 중복 '+n+'건'); });
+
+  const itemSeen=new Map();
+  collectItemRows().forEach(({sheet,row})=>{
+    const id=cell(row['ID']); if(!id) return;
+    if(!itemSeen.has(id)) itemSeen.set(id,[]);
+    itemSeen.get(id).push(sheet);
+  });
+  itemSeen.forEach((sheets,id)=>{ if(sheets.length>1) push('warning','ITEM_DUP',id+' 여러 시트에 존재: '+sheets.join(', ')); });
+
+  const used=new Set();
+  Object.keys(STAGE_DESIGN).forEach(stageKey=>{
+    const stage=STAGE_DESIGN[stageKey];
+    (stage.waves||[]).forEach((wave,i)=>{
+      const entries=parseMonsterEntries(wave.monsters);
+      entries.forEach(e=>{ used.add(e.id); if(!monIds.has(e.id)) push('error','STAGE_REF',stage.name+' Wave '+(i+1)+' → '+e.id+' DB 없음'); });
+      const pcts=String(wave.drop||'').match(/\d+(?=%)/g);
+      if(pcts&&pcts.length){ const sum=pcts.reduce((a,n)=>a+Number(n),0); if(sum!==100) push('warning','DROP_SUM',stage.name+' Wave '+(i+1)+' 드롭 확률 합 '+sum+'%'); }
+      if((i+1)%10===0){
+        const hasBoss=entries.some(e=>{ const m=findMonster(e.id); return m && (cell(m['등급'])==='히로인보스'||e.id==='MON-064'); });
+        if(!hasBoss) push('warning','BOSS_RULE',stage.name+' Wave '+(i+1)+' 히로인 보스 참조 확인 필요');
+      }
+    });
+  });
+  mons.forEach(r=>{ const id=cell(r['ID']); if(id && !used.has(id) && cell(r['등급'])!=='히로인보스') push('info','MON_UNUSED',id+' 스테이지 미사용'); });
+  return issues;
+}
+function renderValidation() {
+  const issues=getValidationIssues();
+  const errors=issues.filter(x=>x.severity==='error').length, warnings=issues.filter(x=>x.severity==='warning').length, infos=issues.filter(x=>x.severity==='info').length;
+  const summary=document.getElementById('validationSummary');
+  if(summary) summary.innerHTML='<span class="health-chip '+(errors?'error':'ok')+'">Errors '+errors+'</span><span class="health-chip '+(warnings?'warning':'ok')+'">Warnings '+warnings+'</span><span class="health-chip">Info '+infos+'</span>';
+  const host=document.getElementById('validationTableWrap'); if(!host)return;
+  if(!issues.length){ host.innerHTML='<div class="placeholder">검사 결과: 이상 없음</div>'; return; }
+  host.innerHTML='<table class="validation-table"><thead><tr><th>Severity</th><th>Code</th><th>내용</th></tr></thead><tbody>'
+    +issues.map(x=>'<tr><td class="validation-sev-'+x.severity+'">'+x.severity.toUpperCase()+'</td><td>'+x.code+'</td><td>'+String(x.message).replace(/</g,'&lt;')+'</td></tr>').join('')
+    +'</tbody></table>';
+}
+function renderDashboard() {
+  const mons=(((DATA['몬스터']||{})['몬스터 DB']||{}).rows)||[];
+  const itemIds=new Set(collectItemRows().map(x=>cell(x.row['ID'])).filter(Boolean));
+  const waveCount=Object.keys(STAGE_DESIGN).reduce((n,k)=>n+((STAGE_DESIGN[k].waves||[]).length),0);
+  const art=buildArtItems(), done=art.filter(x=>normalizeArtStatus(artChecks[x.id])==='DONE').length;
+  const issues=getValidationIssues(), errors=issues.filter(x=>x.severity==='error').length, warnings=issues.filter(x=>x.severity==='warning').length;
+  const balance=getPowerRows().filter(isGradeMismatch).length;
+  const metrics=[
+    ['Monster',mons.length,'DB 등록'],['Item',itemIds.size,'고유 ID'],['Wave',waveCount,Object.keys(STAGE_DESIGN).length+' Stage'],
+    ['Art',done+' / '+art.length,'DONE'],['Balance',balance,'등급 Δ 경고'],['Validation',errors+warnings,'Error + Warning']
+  ];
+  const root=document.getElementById('dashboardMetrics');
+  if(root) root.innerHTML=metrics.map(m=>'<div class="metric-card"><div class="metric-label">'+m[0]+'</div><div class="metric-value">'+m[1]+'</div><div class="metric-sub">'+m[2]+'</div></div>').join('');
+  const health=document.getElementById('dashboardHealth');
+  if(health) health.innerHTML='<span class="health-chip '+(errors?'error':'ok')+'">Errors '+errors+'</span><span class="health-chip '+(warnings?'warning':'ok')+'">Warnings '+warnings+'</span><span class="health-chip '+(balance?'warning':'ok')+'">Balance '+balance+'</span><span class="health-chip '+(done===art.length?'ok':'')+'">Art '+Math.round((done/(art.length||1))*100)+'%</span>';
+}
+(function wireValidationEvents(){
+  const btn=document.getElementById('validationRefreshBtn'); if(btn) btn.addEventListener('click',()=>{ renderValidation(); renderDashboard(); });
+})();
+
 const PAGE_META = {
-  layout: { title: '레이아웃', sub: '타이틀 · 캐릭터 · 스테이지 · 대화 · 옵션 · 인게임 — 흑백 와이어프레임' },
-  stage: { title: '스테이지', sub: '' },
-  power: { title: '파워 지수', sub: '몬스터 스탯 · 특성을 하나의 숫자로 환산 — 스테이지 난이도 설계 기준(v1 초안)' },
-  art: { title: '아트 리소스', sub: '' },
-  data: { title: 'DB', sub: '몬스터 · 아이템(기본/재료/세트/조합) — HTML 파일만 공유해도 열람 가능 · 장비 크기 당분간 1×1' }
+  dashboard:{ title:'Dashboard', sub:'Glass_D Design Console — 데이터 · 밸런스 · 스테이지 · 아트 상태를 한눈에 확인' },
+  layout:{ title:'레이아웃', sub:'타이틀 · 캐릭터 · 스테이지 · 대화 · 옵션 · 인게임 — 흑백 와이어프레임' },
+  stage:{ title:'스테이지', sub:'Wave Power v2 — 단일 몬스터 파워 + Action Economy + 조합 시너지' },
+  power:{ title:'파워 지수', sub:'Power Score v2 — 스탯 · 특성 · 특성 시너지를 하나의 기준선으로 환산' },
+  art:{ title:'아트 리소스', sub:'TODO · WIP · REVIEW · DONE 상태 관리 및 JSON 공유' },
+  validation:{ title:'Validation', sub:'DB 참조 · 스프라이트 · 특성 · 웨이브 규칙 · 데이터 무결성 자동 검사' },
+  data:{ title:'DB', sub:'몬스터 · 아이템(기본/재료/세트/조합) — 단일 HTML 공유 가능' }
 };
 
 const LAYOUT_PANELS = {
@@ -2410,45 +2614,26 @@ function showLayoutTab(tab) {
 
 function showPage(page) {
   if (page === 'outgame' || page === 'ingame') page = 'layout';
-  const meta = PAGE_META[page] || PAGE_META.data;
-  const pageData = document.getElementById('page-data');
-  const pageArt = document.getElementById('page-art');
-  const pageLayout = document.getElementById('page-layout');
-  const pageStage = document.getElementById('page-stage');
-  const pagePower = document.getElementById('page-power');
-  const pagePlaceholder = document.getElementById('page-placeholder');
-  const mainTabs = document.getElementById('mainTabs');
-  document.getElementById('pageTitle').textContent = meta.title;
-  document.getElementById('pageSub').textContent = meta.sub;
-  document.querySelectorAll('.sidebar .nav button').forEach(b => {
-    b.classList.toggle('active', b.dataset.page === page);
-  });
-  if (pageData) pageData.hidden = true;
-  if (pageArt) pageArt.hidden = true;
-  if (pageLayout) pageLayout.hidden = true;
-  if (pageStage) pageStage.hidden = true;
-  if (pagePower) pagePower.hidden = true;
-  if (pagePlaceholder) pagePlaceholder.hidden = true;
-  if (mainTabs) mainTabs.style.display = 'none';
-  if (page === 'data') {
-    if (pageData) pageData.hidden = false;
-    if (mainTabs) mainTabs.style.display = '';
-  } else if (page === 'art') {
-    if (pageArt) pageArt.hidden = false;
-    renderArtPage();
-  } else if (page === 'layout') {
-    if (pageLayout) pageLayout.hidden = false;
-    showLayoutTab('title');
-  } else if (page === 'stage') {
-    if (pageStage) pageStage.hidden = false;
-    renderStagePage();
-  } else if (page === 'power') {
-    if (pagePower) pagePower.hidden = false;
-    renderPowerPage();
-  } else {
-    if (pagePlaceholder) pagePlaceholder.hidden = false;
-    const msg = document.getElementById('placeholderMsg');
-    if (msg) msg.textContent = '준비 중';
+  const meta = PAGE_META[page] || PAGE_META.dashboard;
+  const ids=['dashboard','data','art','layout','stage','power','validation','placeholder'];
+  ids.forEach(id=>{ const el=document.getElementById('page-'+id); if(el) el.hidden=true; });
+  const mainTabs=document.getElementById('mainTabs');
+  document.getElementById('pageTitle').textContent=meta.title;
+  document.getElementById('pageSub').textContent=meta.sub;
+  document.querySelectorAll('.sidebar .nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+  if(mainTabs) mainTabs.style.display='none';
+  const target=document.getElementById('page-'+page);
+  if(target) target.hidden=false;
+  if(page==='dashboard') renderDashboard();
+  else if(page==='data'){ if(mainTabs) mainTabs.style.display=''; }
+  else if(page==='art') renderArtPage();
+  else if(page==='layout') showLayoutTab('title');
+  else if(page==='stage') renderStagePage();
+  else if(page==='power') renderPowerPage();
+  else if(page==='validation') renderValidation();
+  else {
+    const ph=document.getElementById('page-placeholder'); if(ph) ph.hidden=false;
+    const msg=document.getElementById('placeholderMsg'); if(msg) msg.textContent='준비 중';
   }
 }
 
@@ -2462,6 +2647,7 @@ document.querySelectorAll('#layoutSubTabs .subtab').forEach(b => {
 document.querySelectorAll('.sidebar .nav button').forEach(b => {
   b.addEventListener('click', () => showPage(b.dataset.page));
 });
+showPage('dashboard');
 </script>
 </body>
 </html>
